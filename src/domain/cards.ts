@@ -48,9 +48,20 @@ export const CARDS: readonly Card[] = Object.freeze(
   ),
 )
 
-export const CANONICAL_DECK: readonly CardId[] = Object.freeze(
-  CARDS.map((card) => card.id),
-)
+function cardIdsForSuit(suit: Suit, descending = false): CardId[] {
+  const cards = CARDS.filter((card) => card.suit === suit)
+
+  return cards.map((card, index) =>
+    descending ? (cards[cards.length - index - 1] as Card).id : card.id,
+  )
+}
+
+export const CANONICAL_DECK: readonly CardId[] = Object.freeze([
+  ...cardIdsForSuit('spades'),
+  ...cardIdsForSuit('diamonds'),
+  ...cardIdsForSuit('clubs', true),
+  ...cardIdsForSuit('hearts', true),
+])
 
 export function cardFromId(id: CardId): Card {
   if (

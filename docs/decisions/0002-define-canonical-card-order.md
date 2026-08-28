@@ -1,6 +1,6 @@
 # 0002: Define canonical card order
 
-- Status: accepted
+- Status: superseded by [0004](0004-use-new-deck-canonical-order.md)
 - Date: 2026-08-28
 
 ## Context
@@ -30,3 +30,4 @@ Canonical card tests enumerate every ID, suit, and rank boundary.
 ## Related Material
 
 - [Permutation domain plan](../plans/active/2026-08-28-permutation-domain.md)
+- [Superseding new-deck-order decision](0004-use-new-deck-canonical-order.md)

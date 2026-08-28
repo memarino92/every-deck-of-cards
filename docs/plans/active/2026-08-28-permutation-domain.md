@@ -78,7 +78,7 @@ Public deck numbers will range from `1` through `52!`; domain indices range from
 
 # Decisions Made
 
-- Use suit-major canonical order: clubs, diamonds, hearts, spades; within each suit use ace through king.
+- Assign stable card IDs in suit-major order, but use the project's adopted USPCC-style new-deck order as the canonical permutation sequence under decision 0004.
 - Define deck `1` as the canonical ordering and deck `52!` as its lexicographic reverse.
 - Start with array-splice unranking in production because it is the smallest auditable implementation; benchmark the Fenwick alternative before making speed claims.
 - Precompute and freeze factorials from `0!` through `52!`; repeated multiplication obscured selection costs and is unnecessary for immutable domain constants.
@@ -89,6 +89,7 @@ Public deck numbers will range from `1` through `52!`; domain indices range from
 
 - The initial benchmark used only three fixed indices and a Fenwick prototype with repeated setup work. Review prompted linear tree initialization, cached search state, observable result consumption, a deterministic 64-index corpus, explicit timing options, and 52-card candidate equivalence tests before recording results.
 - Runtime validation was strengthened after review to reject coerced card IDs and to freeze exported rank and suit contracts.
+- Production launch work superseded the original canonical sequence before public deck-number links shipped. Card IDs remain stable, while deck `1` now follows the project's adopted USPCC-style new-deck order as recorded in decision 0004.
 
 # Verification Evidence
 
@@ -102,6 +103,7 @@ Public deck numbers will range from `1` through `52!`; domain indices range from
 - `pnpm.cmd build`: passed; production JavaScript is 4.62 kB gzip before the explorer UI is introduced.
 - `pnpm.cmd audit --audit-level high`: found no known vulnerabilities.
 - Domain, performance, and security subagent reviews completed; all correctness findings were addressed and no security findings remained.
+- This evidence predates the canonical-order change. Replacement domain and full-suite verification is recorded in the production launch plan.
 
 # Outcome
 

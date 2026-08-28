@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <radialGradient id="glow" cx="82%" cy="18%" r="72%">
+      <stop offset="0" stop-color="#c49745" stop-opacity=".22" />
+      <stop offset=".62" stop-color="#0d3326" stop-opacity="0" />
+    </radialGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="180%">
+      <feDropShadow dx="0" dy="18" stdDeviation="15" flood-color="#061b14" flood-opacity=".55" />
+    </filter>
+  </defs>
+
+  <rect width="1200" height="630" fill="#0d3326" />
+  <rect width="1200" height="630" fill="url(#glow)" />
+  <path d="M0 544C255 477 453 601 720 530C921 477 1054 453 1200 473V630H0Z" fill="#09281e" />
+
+  <text x="70" y="72" fill="#d6aa5d" font-family="Consolas, monospace" font-size="19" font-weight="700" letter-spacing="4">EVERYDECKOF.CARDS</text>
+  <text x="70" y="209" fill="#f4ead2" font-family="Georgia, serif" font-size="91" letter-spacing="-4">Every deck</text>
+  <text x="120" y="294" fill="#d6aa5d" font-family="Georgia, serif" font-size="91" font-style="italic" letter-spacing="-5">of cards.</text>
+  <text x="73" y="380" fill="#a8b9ae" font-family="Consolas, monospace" font-size="23" letter-spacing="1.5">ONE NUMBER. ONE EXACT SHUFFLE.</text>
+  <text x="73" y="507" fill="#91ad9d" font-family="Georgia, serif" font-size="27">Every possible ordering, directly addressable.</text>
+
+  <g transform="translate(850 325)" filter="url(#shadow)">
+    <g transform="rotate(-19)">
+      <rect x="-115" y="-170" width="230" height="340" rx="18" fill="#f4ead2" stroke="#c49745" stroke-width="5" />
+      <text x="-83" y="-111" fill="#1f211e" font-family="Georgia, serif" font-size="43" font-weight="700">A</text>
+      <text x="-88" y="-65" fill="#1f211e" font-family="Georgia, serif" font-size="45">♠</text>
+      <text x="0" y="40" fill="#1f211e" font-family="Georgia, serif" font-size="99" text-anchor="middle">♠</text>
+    </g>
+    <g transform="translate(76 -8) rotate(-5)">
+      <rect x="-115" y="-170" width="230" height="340" rx="18" fill="#f4ead2" stroke="#c49745" stroke-width="5" />
+      <text x="-84" y="-111" fill="#a83232" font-family="Georgia, serif" font-size="43" font-weight="700">A</text>
+      <text x="-88" y="-65" fill="#a83232" font-family="Georgia, serif" font-size="45">♦</text>
+      <text x="0" y="43" fill="#a83232" font-family="Georgia, serif" font-size="99" text-anchor="middle">♦</text>
+    </g>
+    <g transform="translate(151 11) rotate(11)">
+      <rect x="-115" y="-170" width="230" height="340" rx="18" fill="#f4ead2" stroke="#c49745" stroke-width="5" />
+      <text x="-85" y="-111" fill="#1f211e" font-family="Georgia, serif" font-size="43" font-weight="700">K</text>
+      <text x="-88" y="-65" fill="#1f211e" font-family="Georgia, serif" font-size="45">♣</text>
+      <text x="0" y="39" fill="#1f211e" font-family="Georgia, serif" font-size="99" text-anchor="middle">♣</text>
+    </g>
+  </g>
+
+  <g transform="translate(1010 535)">
+    <text fill="#d6aa5d" font-family="Georgia, serif" font-size="67" font-style="italic" text-anchor="middle">52!</text>
+    <text y="31" fill="#91ad9d" font-family="Consolas, monospace" font-size="13" letter-spacing="3" text-anchor="middle">POSSIBILITIES</text>
+  </g>
+</svg>

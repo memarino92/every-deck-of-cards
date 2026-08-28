@@ -12,7 +12,7 @@ possible orderings. This project will make any one of them directly reachable wi
 
 ## Status
 
-The repository is at its foundation stage. The application shell, quality gates, project documentation, and deployment target are in place. Reversible permutation indexing, worker computation, astronomical virtualization, favorites, and the public technical talk are planned next.
+The application shell, quality gates, production target, and reversible permutation indexing are in place. Worker computation, astronomical virtualization, favorites, and the public technical talk are planned next.
 
 ## Inspiration
 
@@ -29,7 +29,7 @@ A later interactive mode should let visitors drag cards into any ordering and wa
 - Oxlint and Prettier for static analysis and formatting
 - Vitest for domain tests and benchmarks
 - Playwright for browser behavior and rendering performance (planned)
-- Cloudflare Workers Static Assets with no application Worker runtime
+- Cloudflare Workers Static Assets at `everydeckof.cards` with no application Worker runtime
 - pnpm for dependency management
 
 ## Development
@@ -53,6 +53,8 @@ pnpm typecheck
 pnpm test
 pnpm build
 ```
+
+`wrangler.jsonc` is the Cloudflare deployment source of truth. [Cloudflare recommends JSONC for new projects](https://developers.cloudflare.com/workers/wrangler/configuration/); it configures the production custom domain and SPA fallback without an application Worker. Run `pnpm deploy` only with an authenticated Cloudflare account that controls the `everydeckof.cards` zone.
 
 Run reproducible development benchmarks separately from correctness gates:
 
