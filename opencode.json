@@ -1,0 +1,34 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "share": "disabled",
+  "instructions": ["CONTRIBUTING.md"],
+  "watcher": {
+    "ignore": ["node_modules/**", "dist/**", "coverage/**", "test-results/**"]
+  },
+  "permission": {
+    "bash": {
+      "*": "ask",
+      "git status*": "allow",
+      "git diff*": "allow",
+      "git log*": "allow",
+      "git show*": "allow",
+      "git branch --show-current": "allow",
+      "pnpm *": "allow",
+      "pnpm.cmd *": "allow",
+      "git commit*": "ask",
+      "git push*": "ask",
+      "git push --force*": "deny",
+      "git push -f*": "deny",
+      "git reset --hard*": "deny",
+      "git clean -f*": "deny",
+      "wrangler deploy*": "ask",
+      "npx *wrangler deploy*": "ask",
+      "pnpm *wrangler deploy*": "ask",
+      "pnpm.cmd *wrangler deploy*": "ask",
+      "pnpm deploy*": "ask",
+      "pnpm.cmd deploy*": "ask",
+      "pnpm run deploy*": "ask",
+      "pnpm.cmd run deploy*": "ask"
+    }
+  }
+}

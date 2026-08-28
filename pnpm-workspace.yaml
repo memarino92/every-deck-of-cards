@@ -1,0 +1,10 @@
+autoInstallPeers: false
+engineStrict: true
+onlyBuiltDependencies:
+  - esbuild
+  - workerd
+peerDependencyRules:
+  allowedVersions:
+    typescript: 7.0.2
+saveExact: true
+strictPeerDependencies: true
