@@ -28,4 +28,4 @@ The initial production build and tests are recorded in the repository foundation
 ## Related Material
 
 - [Architecture](../architecture.md)
-- [Repository foundation plan](../plans/active/2026-08-27-repository-foundation.md)
+- [Repository foundation plan](../plans/completed/2026-08-27-repository-foundation.md)

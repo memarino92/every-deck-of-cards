@@ -1,6 +1,6 @@
 ---
 title: Repository foundation
-status: active
+status: completed
 created: 2026-08-27
 updated: 2026-08-27
 owners:
@@ -64,7 +64,7 @@ Create the README, architecture overview, first decision, project instructions, 
 - [x] Configure quality gates, CI, and Cloudflare static assets.
 - [x] Install locked dependencies.
 - [x] Run all verification.
-- [ ] Review and create the first conventional commit.
+- [x] Review and create the first conventional commit.
 
 # Decisions Made
 
@@ -98,8 +98,8 @@ Create the README, architecture overview, first decision, project instructions, 
 
 # Outcome
 
-The project foundation is implemented and verified. It is ready for the explicitly requested first commit; archival follows once that commit exists.
+The project foundation is implemented, verified, committed, and published in the public GitHub repository.
 
 # Related Commits
 
-Pending.
+- `0e46493` `chore(repo): establish project foundation`

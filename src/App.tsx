@@ -36,7 +36,12 @@ export function App() {
 
       <footer>
         <span>52! possibilities</span>
-        <span>Open source · MIT</span>
+        <a
+          href="https://github.com/memarino92/every-deck-of-cards"
+          rel="noreferrer"
+        >
+          Source on GitHub
+        </a>
       </footer>
     </main>
   )
