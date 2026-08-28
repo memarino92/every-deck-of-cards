@@ -14,6 +14,14 @@ possible orderings. This project will make any one of them directly reachable wi
 
 The repository is at its foundation stage. The application shell, quality gates, project documentation, and deployment target are in place. Reversible permutation indexing, worker computation, astronomical virtualization, favorites, and the public technical talk are planned next.
 
+## Inspiration
+
+This project is inspired by playful attempts to make impossibly large spaces feel explorable, including [Every UUID](https://everyuuid.com/) and [Every Rubik's Cube](https://everycube.alen.is/).
+
+## Future Interaction
+
+A later interactive mode should let visitors drag cards into any ordering and watch its exact deck number update live. That editor will use the same reversible ranking function as the explorer, while remaining a separate UI milestone from the initial virtualized feed.
+
 ## Technology
 
 - SolidJS and strict TypeScript
@@ -45,6 +53,14 @@ pnpm typecheck
 pnpm test
 pnpm build
 ```
+
+Run reproducible development benchmarks separately from correctness gates:
+
+```sh
+pnpm bench
+```
+
+Benchmark methodology and machine-specific results live under `docs/benchmarks/`. Timings are not portable CI assertions.
 
 On Windows systems that block PowerShell script shims, use `pnpm.cmd` instead of changing the machine execution policy.
 

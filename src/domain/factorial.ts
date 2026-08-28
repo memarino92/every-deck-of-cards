@@ -1,5 +1,17 @@
 const MAX_FACTORIAL_INPUT = 52
 
+const FACTORIALS: readonly bigint[] = Object.freeze(
+  Array.from({ length: MAX_FACTORIAL_INPUT + 1 }).reduce<bigint[]>(
+    (values, _, value) => {
+      values.push(
+        value === 0 ? 1n : (values[value - 1] as bigint) * BigInt(value),
+      )
+      return values
+    },
+    [],
+  ),
+)
+
 export function factorial(value: number): bigint {
   if (
     !Number.isSafeInteger(value) ||
@@ -11,11 +23,5 @@ export function factorial(value: number): bigint {
     )
   }
 
-  let result = 1n
-
-  for (let factor = 2n; factor <= BigInt(value); factor += 1n) {
-    result *= factor
-  }
-
-  return result
+  return FACTORIALS[value] as bigint
 }
