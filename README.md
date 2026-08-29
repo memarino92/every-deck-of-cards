@@ -12,7 +12,7 @@ possible orderings. This project will make any one of them directly reachable wi
 
 ## Status
 
-The application shell, quality gates, production target, and reversible permutation indexing are in place. Worker computation, astronomical virtualization, favorites, and the public technical talk are planned next.
+The application shell, quality gates, production target, and reversible permutation indexing are in place. Next up: a [Why page](docs/plans/active/2026-08-28-why-page.md) to answer "how does this work?" while the explorers are built, an [interactive factoradic explainer](docs/plans/active/2026-08-28-factoradic-explainer.md) that walks the algorithm with 2–5 card decks, then worker computation, astronomical virtualization, favorites, the [deck editor](docs/plans/active/2026-08-28-deck-editor.md), and the public technical talk.
 
 ## Inspiration
 
@@ -20,7 +20,7 @@ This project is inspired by playful attempts to make impossibly large spaces fee
 
 ## Future Interaction
 
-A later interactive mode should let visitors drag cards into any ordering and watch its exact deck number update live. That editor will use the same reversible ranking function as the explorer, while remaining a separate UI milestone from the initial virtualized feed.
+A later interactive mode will let visitors drag cards into any ordering and watch its exact deck number update live. A randomize action will animate a visual shuffle from the current deck to a uniformly random one, always settling on a real, shareable deck number. The editor will use the same reversible ranking function as the explorer, while remaining a separate UI milestone from the initial virtualized feed.
 
 ## Technology
 

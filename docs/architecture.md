@@ -30,7 +30,7 @@ Pure ranking and unranking functions will be directly testable. The UI will requ
 
 ## Documentation
 
-Technical documentation will be part of the application and reusable in a full-screen talk mode. Durable plans and architecture decisions remain readable Markdown in the repository. Claims about scale or performance must expose assumptions, sources, and reproducible calculations.
+Technical documentation will be part of the application and reusable in a full-screen talk mode. The first shipped pieces are a `/why` page answering "how does this work and why does it exist" and an interactive factoradic explainer that walks the ranking algorithm with decks of 2 through 5 cards before extrapolating to 52. Durable plans and architecture decisions remain readable Markdown in the repository. Claims about scale or performance must expose assumptions, sources, and reproducible calculations; explainer content computes its tables and examples from the tested domain at render time rather than hardcoding results.
 
 ## Deployment
 
