@@ -14,6 +14,12 @@
 - Rendering, worker transport, virtualization, and domain logic have explicit boundaries.
 - The production application remains client rendered and deployable as static assets.
 
+## Language and Toolchain
+
+- Use the latest stable ECMAScript and TypeScript features freely; this is a greenfield project with no legacy browser or runtime support burden. Prefer modern built-ins (`toReversed`, `toSorted`, `Object.groupBy`, `structuredClone`, etc.) over hand-rolled equivalents.
+- TypeScript compiles with `"lib": ["ESNext", ...]` and `"target": "ES2024"`; the Vite build targets `es2024`. Raise targets again when Vite defaults and baseline browser support move.
+- Node.js 24+ for local tooling; keep the `packageManager` pnpm version in `package.json` current.
+
 ## Workflow
 
 - Use pnpm and preserve `pnpm-lock.yaml`.
