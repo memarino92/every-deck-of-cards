@@ -7,6 +7,7 @@ export function SiteNav() {
         Home
       </A>
       <A href="/why">Why?</A>
+      <A href="/how">How?</A>
     </nav>
   )
 }

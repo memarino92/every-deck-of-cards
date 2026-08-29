@@ -1,6 +1,6 @@
 ---
 title: Factoradic algorithm explainer
-status: active
+status: completed
 created: 2026-08-28
 updated: 2026-08-28
 owners:
@@ -66,28 +66,41 @@ No performance claim; the explainer renders at most 120 rows, all client-side, n
 
 # Tasks
 
-- [ ] Design the section outline and the digit-trace presentation helper in the domain (pure, tested).
-- [ ] Build the explainer route with the 2/3/4/5-card sections and the extrapolation to 52.
-- [ ] Build the step-through interaction for visitor-chosen indices.
-- [ ] Add talk-mode rendering of the same sections with keyboard navigation.
-- [ ] Wire navigation and cross-links with `/why` and home.
-- [ ] Run all quality gates and record evidence.
+- [x] Design the section outline and the digit-trace presentation helper in the domain (pure, tested).
+- [x] Build the explainer route with the 2/3/4/5-card sections and the extrapolation to 52.
+- [x] Build the step-through interaction for visitor-chosen indices.
+- [x] Add talk-mode rendering of the same sections with keyboard navigation.
+- [x] Wire navigation and cross-links with `/why` and home.
+- [x] Run all quality gates and record evidence.
 
 # Decisions Made
 
-Pending implementation.
+- Route is `/how` (with `/talk` for full-screen talk mode); nav grows to Home / Why? / How?.
+- New pure domain module `src/domain/trace.ts` (`traceUnrank`) re-derives `unrankPermutation` while recording every factoradic digit, block size, running index, remainder, and pool snapshot — the UI renders exactly what the domain computed, never hardcoded steps. Exhaustively tested against production unrank through 8 values plus a representative 52-card index; output frozen.
+- Explainer uses plain number symbols (0, 1, 2, …) for small decks — sequential card IDs (decision 0005) make the symbols literal card positions, and card art is a later rendering concern.
+- Talk mode is a sibling `/talk` route outside the shared layout (full-screen, keyboard ←/→/space and button advance), reusing the exact same table and stepper components as `/how`.
+- No new runtime dependencies; `@solidjs/router` was already adopted by the Why page work.
 
 # Deviations
 
-None yet.
+- Solid lint required restructuring both interactive components: prop reads at setup moved into `createMemo`/`createSignal` accessors (`props.size`, `props.index`).
+- The stepper gained a controlled `index` prop so clicking a 4-card table row replays that exact index; `initialIndex` remains for uncontrolled defaults.
+- Routing layout changed to a wildcard site route inside the shared `Layout` with `/talk` as a full-screen sibling. The first attempt (routes wrapped in `<Layout>` via children) passed typecheck, lint, and tests but rendered `[object Object]` — caught only by visual review. Final structure uses the documented @solidjs/router v1 pattern: `component={Layout}` with nested `<Route>` children, `/talk` as a top-level sibling. Lesson recorded: routing changes get a headless-browser screenshot check before claiming verification.
+- Headless-Chrome screenshots of `/how` (both sections), `/talk`, and `/` were inspected after the routing fix; all render correctly.
 
 # Verification Evidence
 
-Pending.
+- `pnpm.cmd format:check`: passed.
+- `pnpm.cmd lint`: passed with 196 rules, zero warnings, and zero errors.
+- `pnpm.cmd typecheck`: passed with TypeScript 7.0.2.
+- `pnpm.cmd test`: passed 71 tests across seven files, including the new trace suite (exhaustive through 8 values, 52-card representative index, frozen output, golden three-value walk).
+- `pnpm.cmd build`: passed; production JavaScript is 19.1 kB gzip including router and talk mode.
+- `vite preview` (production build + SPA fallback): `/`, `/why`, `/how`, and `/talk` all return 200.
+- Headless-Chrome screenshot inspection confirmed `/`, `/how`, and `/talk` render their intended content after the routing-structure fix.
 
 # Outcome
 
-Pending.
+The `/how` explainer walks the factoradic recipe through 2, 3, 4, and 5-card decks — complete tables where they fit, interactive step-throughs where they don't — and extrapolates to 52 with the atoms-on-Earth comparison. `/talk` presents the same sections full-screen with keyboard advance. Every number on both pages is computed by the tested domain at render time.
 
 # Related Commits
 

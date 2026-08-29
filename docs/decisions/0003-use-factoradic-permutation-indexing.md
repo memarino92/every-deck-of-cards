@@ -33,4 +33,5 @@ Three standalone Node.js benchmark processes, each running a deterministic mixed
 ## Related Material
 
 - [Permutation domain plan](../plans/completed/2026-08-28-permutation-domain.md)
+- [Factoradic explainer plan](../plans/completed/2026-08-28-factoradic-explainer.md)
 - [Permutation selection benchmark](../benchmarks/permutation-selection.md)
