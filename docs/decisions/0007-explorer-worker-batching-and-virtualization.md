@@ -1,6 +1,6 @@
 # 0007: Explorer worker batching and bigint virtualization
 
-- Status: proposed
+- Status: accepted
 - Date: 2026-08-29
 
 ## Context
@@ -54,5 +54,5 @@ To be recorded in the explorer plan: worker round-trip tests, virtualization anc
 - [Factoradic permutation indexing](0003-use-factoradic-permutation-indexing.md)
 - [Canonical card order](0004-use-new-deck-canonical-order.md)
 - [Sequential card IDs](0005-assign-card-ids-in-canonical-order.md)
-- [Explorer plan](../plans/active/2026-08-29-explorer.md)
+- [Explorer plan](../plans/completed/2026-08-29-explorer.md)
 - [Architecture](../architecture.md)
