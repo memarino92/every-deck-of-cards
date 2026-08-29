@@ -1,8 +1,8 @@
 export const SUITS = Object.freeze([
-  'clubs',
-  'diamonds',
-  'hearts',
   'spades',
+  'diamonds',
+  'clubs',
+  'hearts',
 ] as const)
 
 export const RANKS = Object.freeze([
@@ -36,32 +36,21 @@ export interface Card {
 
 export const CARD_COUNT = SUITS.length * RANKS.length
 
+function canonicalRanks(suit: Suit): readonly Rank[] {
+  return suit === 'clubs' || suit === 'hearts' ? RANKS.toReversed() : RANKS
+}
+
 export const CARDS: readonly Card[] = Object.freeze(
-  SUITS.flatMap((suit, suitIndex) =>
-    RANKS.map((rank, rankIndex) =>
-      Object.freeze({
-        id: (suitIndex * RANKS.length + rankIndex) as CardId,
-        rank,
-        suit,
-      }),
-    ),
+  SUITS.flatMap((suit) =>
+    canonicalRanks(suit).map((rank) => ({ rank, suit })),
+  ).map(({ rank, suit }, position) =>
+    Object.freeze({ id: position as CardId, rank, suit }),
   ),
 )
 
-function cardIdsForSuit(suit: Suit, descending = false): CardId[] {
-  const cards = CARDS.filter((card) => card.suit === suit)
-
-  return cards.map((card, index) =>
-    descending ? (cards[cards.length - index - 1] as Card).id : card.id,
-  )
-}
-
-export const CANONICAL_DECK: readonly CardId[] = Object.freeze([
-  ...cardIdsForSuit('spades'),
-  ...cardIdsForSuit('diamonds'),
-  ...cardIdsForSuit('clubs', true),
-  ...cardIdsForSuit('hearts', true),
-])
+export const CANONICAL_DECK: readonly CardId[] = Object.freeze(
+  CARDS.map((card) => card.id),
+)
 
 export function cardFromId(id: CardId): Card {
   if (
