@@ -439,6 +439,7 @@ footer a {
   gap: clamp(1rem, 2.5vh, 2rem);
   width: min(100%, 110rem);
   margin: 0 auto;
+  padding: clamp(1rem, 3vh, 2.5rem) 0;
 }
 
 .explorer-bar {
@@ -513,6 +514,16 @@ footer a {
   background: rgb(196 143 53 / 15%);
 }
 
+.jump .random-button {
+  border-color: #d6aa5d;
+  color: #d6aa5d;
+}
+
+.jump .random-button:hover {
+  background: rgb(214 170 93 / 18%);
+  color: #f4ead2;
+}
+
 .explorer-meta {
   margin: 0;
   color: #91ad9d;
@@ -523,7 +534,8 @@ footer a {
 
 .explorer-scroll {
   position: relative;
-  height: min(78vh, 72rem);
+  height: min(72vh, 62rem);
+  margin-bottom: clamp(1rem, 3vh, 2.5rem);
   overflow-y: auto;
   border: 1px solid rgb(244 234 210 / 12%);
   border-radius: 0.5rem;
@@ -536,28 +548,32 @@ footer a {
 }
 
 .deck-row {
-  display: flex;
-  align-items: center;
-  gap: clamp(0.75rem, 2vw, 1.75rem);
+  position: relative;
+  display: block;
   padding: 0 clamp(0.75rem, 2vw, 1.5rem);
   border-bottom: 1px solid rgb(244 234 210 / 7%);
 }
 
 .deck-number {
-  flex: none;
-  min-width: 16ch;
+  position: absolute;
+  top: clamp(0.4rem, 1.2vh, 0.8rem);
+  left: clamp(0.75rem, 2vw, 1.5rem);
+  z-index: 70;
   color: #d6aa5d;
   font-family: ui-monospace, 'Cascadia Code', monospace;
   font-size: 0.72rem;
   letter-spacing: 0.04em;
   overflow-wrap: anywhere;
+  /* Lift the number above the fan without a hard box. */
+  text-shadow: 0 1px 3px rgb(0 0 0 / 70%);
 }
 
 .deck-fan {
   position: relative;
-  flex: 1;
   height: 100%;
-  min-width: 0;
+  width: 100%;
+  /* Clear the overlaid deck number in the top-left corner. */
+  padding-top: clamp(1.1rem, 2.6vh, 1.7rem);
 }
 
 .deck-loading {
@@ -665,37 +681,124 @@ footer a {
 
 .court {
   position: absolute;
-  inset: calc(var(--card-width) * 0.22) calc(var(--card-width) * 0.16);
+  inset: calc(var(--card-width) * 0.3) calc(var(--card-width) * 0.22);
   display: flex;
   flex-direction: column;
   border: 1px solid currentColor;
-  border-radius: calc(var(--card-width) * 0.05);
+  border-radius: calc(var(--card-width) * 0.06);
   overflow: hidden;
 }
 
-.court-half {
+/* Two mirrored figures share the panel, with the suit emblem centered over
+   the seam. The jack's knight is offset so the neck meets the middle and the
+   head pokes toward the edge, like a classic two-headed court card. */
+.court-figure {
   flex: 1;
-  display: grid;
-  place-content: center;
-  gap: calc(var(--card-width) * 0.02);
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   line-height: 1;
 }
 
-.court-half-flip {
+.court-figure-flip {
   transform: rotate(180deg);
 }
 
 .court-glyph {
   font-size: calc(var(--card-width) * 0.34);
+  line-height: 0.9;
 }
 
-.court-divider {
-  height: 1px;
-  background: currentColor;
-  opacity: 0.55;
+/* Offset only the asymmetric knight; crowns stay centered. The top (unrotated)
+   head scoots left; the flipped bottom head keeps its position. Because the
+   bottom half is rotated 180deg, its translateX reads in the opposite visual
+   direction. */
+.court-figure .court-glyph.glyph-jack {
+  transform: translateX(calc(var(--card-width) * -0.03));
 }
 
-.court .court-suit {
+.court-figure-flip .court-glyph.glyph-jack {
+  transform: translateX(calc(var(--card-width) * -0.04));
+}
+
+.court-emblem {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: calc(var(--card-width) * 0.02);
+  border-radius: 50%;
+  background: #fbf7ec;
   font-size: calc(var(--card-width) * 0.22);
+  line-height: 1;
+}
+
+/* -------------------------------------------------------------------------
+   Card styling grid (dev-only). A neutral surface to tune card faces.
+   ------------------------------------------------------------------------- */
+
+.card-grid-page {
+  display: grid;
+  gap: clamp(1.5rem, 3vh, 2.5rem);
+  width: min(100%, 110rem);
+  margin: 0 auto;
+  padding: clamp(1.5rem, 4vh, 3rem) 0;
+}
+
+.card-grid-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem 2rem;
+}
+
+.card-grid-bar h1 {
+  max-width: none;
+  margin: 0;
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.card-grid-bar .eyebrow {
+  margin-bottom: 0.75rem;
+}
+
+.card-grid-control {
+  display: grid;
+  gap: 0.4rem;
+  color: #91ad9d;
+  font-family: ui-monospace, 'Cascadia Code', monospace;
+  font-size: 0.8rem;
+}
+
+.card-grid-control input[type='range'] {
+  width: 16rem;
+  accent-color: #d6aa5d;
+  cursor: pointer;
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(
+    auto-fill,
+    minmax(calc(var(--card-width) + 1.25rem), 1fr)
+  );
+  gap: calc(var(--card-width) * 0.22);
+  justify-items: center;
+}
+
+.card-cell {
+  display: grid;
+  gap: 0.6rem;
+  justify-items: center;
+  margin: 0;
+}
+
+.card-cell figcaption {
+  color: #91ad9d;
+  font-family: ui-monospace, 'Cascadia Code', monospace;
+  font-size: 0.7rem;
+  text-align: center;
 }
