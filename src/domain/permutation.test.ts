@@ -3,7 +3,11 @@ import { describe, expect, it } from 'vitest'
 import { CANONICAL_DECK } from './cards.ts'
 import { DECK_COUNT } from './deck-number.ts'
 import { factorial } from './factorial.ts'
-import { rankPermutation, unrankPermutation } from './permutation.ts'
+import {
+  nextPermutation,
+  rankPermutation,
+  unrankPermutation,
+} from './permutation.ts'
 
 const THREE_VALUE_PERMUTATIONS = [
   ['a', 'b', 'c'],
@@ -122,5 +126,46 @@ describe('permutation ranking', () => {
     expect(unrankPermutation([Number.NaN], 0n)).toEqual([Number.NaN])
     expect(rankPermutation([-0, 1], [0, 1])).toBe(0n)
     expect(() => rankPermutation([-0, 0], [-0, 0])).toThrow(RangeError)
+  })
+})
+
+describe('nextPermutation', () => {
+  it('steps from index i to i+1 for a run of 52-card decks', () => {
+    const start = 12_345_678_901_234_567_890n
+    const ordering = [...unrankPermutation(CANONICAL_DECK, start)]
+
+    for (let step = 1; step <= 512; step += 1) {
+      expect(nextPermutation(ordering)).toBe(true)
+      expect(rankPermutation(CANONICAL_DECK, ordering)).toBe(
+        start + BigInt(step),
+      )
+    }
+  })
+
+  it('matches unrank across suit-run boundaries', () => {
+    // Cross the spades→diamonds boundary (index 13!) and the midpoint rank
+    // reversal, where many positions change at once.
+    for (const boundary of [factorial(13), DECK_COUNT / 2n]) {
+      const ordering = [...unrankPermutation(CANONICAL_DECK, boundary - 1n)]
+
+      expect(nextPermutation(ordering)).toBe(true)
+      expect(rankPermutation(CANONICAL_DECK, ordering)).toBe(boundary)
+    }
+  })
+
+  it('returns false at the final permutation and leaves it in place', () => {
+    const ordering = [...unrankPermutation(CANONICAL_DECK, DECK_COUNT - 1n)]
+
+    expect(nextPermutation(ordering)).toBe(false)
+    expect(rankPermutation(CANONICAL_DECK, ordering)).toBe(DECK_COUNT - 1n)
+  })
+
+  it('produces the canonical order on the first step from deck 1', () => {
+    const ordering = [...unrankPermutation(CANONICAL_DECK, 0n)]
+
+    nextPermutation(ordering)
+
+    // Deck 2 swaps the last two cards of the new-deck order.
+    expect(rankPermutation(CANONICAL_DECK, ordering)).toBe(1n)
   })
 })

@@ -6,6 +6,7 @@ export function SiteNav() {
       <A href="/" end>
         Home
       </A>
+      <A href="/explore">Explore</A>
       <A href="/why">Why?</A>
       <A href="/how">How?</A>
     </nav>

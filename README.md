@@ -12,7 +12,7 @@ possible orderings. This project will make any one of them directly reachable wi
 
 ## Status
 
-The application shell, quality gates, production target, and reversible permutation indexing are in place, and the live [Why page](https://everydeckof.cards/why) explains how and why the project works. The [factoradic explainer](https://everydeckof.cards/how) walks the ranking algorithm with 2–5 card decks (and has a full-screen [talk mode](https://everydeckof.cards/talk)). Next up: worker computation, astronomical virtualization, favorites, the [deck editor](docs/plans/active/2026-08-28-deck-editor.md), and the full technical talk.
+The application shell, quality gates, production target, and reversible permutation indexing are in place, and the live [Why page](https://everydeckof.cards/why) explains how and why the project works. The [factoradic explainer](https://everydeckof.cards/how) walks the ranking algorithm with 2–5 card decks (and has a full-screen [talk mode](https://everydeckof.cards/talk)). The [explorer](https://everydeckof.cards/explore) is now live: scroll every one of the `52!` decks as a fan of real playing cards, or jump straight to any deck by number. Next up: favorites, the [deck editor](docs/plans/active/2026-08-28-deck-editor.md), and the full technical talk.
 
 ## Inspiration
 

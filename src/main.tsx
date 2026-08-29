@@ -1,6 +1,7 @@
 import { Route, Router } from '@solidjs/router'
 import { render } from 'solid-js/web'
 
+import { ExplorerPage } from './ExplorerPage.tsx'
 import { HomePage } from './HomePage.tsx'
 import { HowPage } from './HowPage.tsx'
 import { Layout } from './Layout.tsx'
@@ -20,6 +21,7 @@ render(
       <Route path="/talk" component={TalkPage} />
       <Route path="/" component={Layout}>
         <Route path="/" component={HomePage} />
+        <Route path="/explore" component={ExplorerPage} />
         <Route path="/why" component={WhyPage} />
         <Route path="/how" component={HowPage} />
       </Route>
