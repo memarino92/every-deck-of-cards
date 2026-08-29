@@ -47,4 +47,4 @@ Both halves of the compatibility contract are now fixed before public exposure: 
 
 - [Use new-deck canonical order](0004-use-new-deck-canonical-order.md)
 - [Define canonical card order (superseded)](0002-define-canonical-card-order.md)
-- [Permutation domain plan](../plans/active/2026-08-28-permutation-domain.md)
+- [Permutation domain plan](../plans/completed/2026-08-28-permutation-domain.md)

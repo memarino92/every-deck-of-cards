@@ -1,6 +1,6 @@
 ---
 title: Permutation domain
-status: active
+status: completed
 created: 2026-08-28
 updated: 2026-08-28
 owners:
@@ -124,4 +124,6 @@ The domain is final and frozen. It defines and verifies the canonical card contr
 
 # Related Commits
 
-Pending.
+- `ed2f750` - `feat(domain): assign card IDs sequentially in canonical deck order`
+- `fafa64f` - `build(toolchain): target ES2024 with ESNext TypeScript libs`
+- `28a1694` - `docs(plans): add roadmap decisions and execution plans`
