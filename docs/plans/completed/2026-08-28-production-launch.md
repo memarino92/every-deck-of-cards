@@ -76,7 +76,7 @@ No performance claim or algorithm change is included, so no new benchmark is req
 
 # Deviations
 
-- The initial implementation used ES2023 non-mutating array helpers in response to lint guidance. TypeScript's ES2022 library correctly rejected them, so canonical reversal uses explicit index selection without widening browser requirements.
+- The initial implementation used ES2023 non-mutating array helpers in response to lint guidance. TypeScript's ES2022 library correctly rejected them, so canonical reversal uses explicit index selection without widening browser requirements. (Superseded: the project now targets ES2024 with ESNext libs; see AGENTS.md "Language and Toolchain".)
 - Review prompted stronger full-map card-ID assertions, more precise social copy, and qualification of the secondary source for the adopted USPCC-style order.
 
 # Verification Evidence
