@@ -162,15 +162,17 @@ export function PlayingCard(props: { id: CardId }) {
 
       {face().isCourt ? (
         <span class="court" aria-hidden="true">
-          <span class="court-half">
-            <span class="court-glyph">{face().courtGlyph}</span>
-            <span class="court-suit">{face().suitSymbol}</span>
+          <span class="court-figure">
+            <span class={`court-glyph glyph-${cardFromId(props.id).rank}`}>
+              {face().courtGlyph}
+            </span>
           </span>
-          <span class="court-divider" />
-          <span class="court-half court-half-flip">
-            <span class="court-glyph">{face().courtGlyph}</span>
-            <span class="court-suit">{face().suitSymbol}</span>
+          <span class="court-figure court-figure-flip">
+            <span class={`court-glyph glyph-${cardFromId(props.id).rank}`}>
+              {face().courtGlyph}
+            </span>
           </span>
+          <span class="court-emblem">{face().suitSymbol}</span>
         </span>
       ) : (
         <span class="pips" aria-hidden="true">
