@@ -12,7 +12,7 @@ possible orderings. This project will make any one of them directly reachable wi
 
 ## Status
 
-The application shell, quality gates, production target, and reversible permutation indexing are in place. Next up: a [Why page](docs/plans/active/2026-08-28-why-page.md) to answer "how does this work?" while the explorers are built, an [interactive factoradic explainer](docs/plans/active/2026-08-28-factoradic-explainer.md) that walks the algorithm with 2–5 card decks, then worker computation, astronomical virtualization, favorites, the [deck editor](docs/plans/active/2026-08-28-deck-editor.md), and the public technical talk.
+The application shell, quality gates, production target, and reversible permutation indexing are in place, and the live [Why page](https://everydeckof.cards/why) explains how and why the project works. Next up: an [interactive factoradic explainer](docs/plans/active/2026-08-28-factoradic-explainer.md) that walks the algorithm with 2–5 card decks, then worker computation, astronomical virtualization, favorites, the [deck editor](docs/plans/active/2026-08-28-deck-editor.md), and the public technical talk.
 
 ## Inspiration
 
@@ -25,6 +25,7 @@ A later interactive mode will let visitors drag cards into any ordering and watc
 ## Technology
 
 - SolidJS and strict TypeScript
+- `@solidjs/router` for client-side navigation between pages
 - Vite for the client-only application and Web Worker bundles
 - Oxlint and Prettier for static analysis and formatting
 - Vitest for domain tests and benchmarks
