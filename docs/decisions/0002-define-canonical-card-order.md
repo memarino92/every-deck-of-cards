@@ -29,5 +29,5 @@ Canonical card tests enumerate every ID, suit, and rank boundary.
 
 ## Related Material
 
-- [Permutation domain plan](../plans/active/2026-08-28-permutation-domain.md)
+- [Permutation domain plan](../plans/completed/2026-08-28-permutation-domain.md)
 - [Superseding new-deck-order decision](0004-use-new-deck-canonical-order.md)
