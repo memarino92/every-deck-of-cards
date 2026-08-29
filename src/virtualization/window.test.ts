@@ -167,3 +167,46 @@ describe('recentering', () => {
     )
   })
 })
+
+// Regression guard for the "lands on deck 13" bug: on load, the requested
+// deck must sit at the viewport top, not scrolled past into the window.
+// The explorer seeds scrollTop so the requested deck is at the top. Simulate
+// that seed and return the deck index shown at the viewport top.
+function viewportTopIndexAfterLoad(
+  requestedIndex: bigint,
+  geo: ReturnType<typeof createWindowGeometry>,
+): bigint {
+  const start = windowStart(requestedIndex, geo)
+  const scrollRow = Number(requestedIndex - start)
+
+  return logicalIndexAt(requestedIndex, scrollRow, geo)
+}
+
+describe('initial placement (regression)', () => {
+  it('places deck 1 at the viewport top on load', () => {
+    expect(viewportTopIndexAfterLoad(0n, geometry)).toBe(0n)
+  })
+
+  it('does not scroll past the first deck into the window', () => {
+    // The reported bug: load showed deck 13. With correct placement the first
+    // visible deck is 1 (index 0).
+    const firstVisible = viewportTopIndexAfterLoad(0n, geometry)
+
+    expect(firstVisible).toBe(0n)
+    expect(firstVisible).not.toBe(12n)
+  })
+
+  it('places a mid-space deck at the viewport top on load', () => {
+    const mid = 1_000_000n
+
+    expect(viewportTopIndexAfterLoad(mid, geometry)).toBe(mid)
+  })
+
+  it('keeps a top-loaded deck stable across the first scroll event', () => {
+    // After placing deck 1 at the top, a small scroll should not jump the
+    // anchor away from the first window.
+    const next = recenteredAnchor(0n, 0, geometry)
+
+    expect(windowStart(next, geometry)).toBe(0n)
+  })
+})

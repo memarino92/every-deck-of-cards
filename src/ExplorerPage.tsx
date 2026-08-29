@@ -14,9 +14,11 @@ import {
   LAST_DECK_NUMBER,
   permutationIndexToPublicDeckNumber,
 } from './domain/deck-number.ts'
+import { cryptoEntropy, randomPermutationIndex } from './domain/random.ts'
 import { PlayingCard } from './PlayingCard.tsx'
 import { parseDeckNumberParam } from './virtualization/deck-param.ts'
 import {
+  clampAnchor,
   createWindowGeometry,
   logicalIndexAt,
   recenteredAnchor,
@@ -41,24 +43,46 @@ interface DeckRow {
   readonly cards: Uint8Array | undefined
 }
 
+/**
+ * The anchor is the deck under the viewport's top edge. The physical window
+ * holds `PHYSICAL_ROWS` rows with `windowStart(anchor)` the first rendered
+ * row; the anchor sits `floor(PHYSICAL_ROWS / 2)` rows into the window so
+ * there is overscan on both sides. Scrolling moves the viewport top away from
+ * the anchor; past `OVERSCAN` rows of drift the anchor recenters.
+ */
 export function ExplorerPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const raw = searchParams['deck']
-  const initialIndex = parseDeckNumberParam(Array.isArray(raw) ? raw[0] : raw)
+  const requestedIndex = parseDeckNumberParam(Array.isArray(raw) ? raw[0] : raw)
 
-  const [anchor, setAnchor] = createSignal<bigint>(initialIndex)
+  // Anchor the requested deck, then place the viewport so that deck sits at
+  // the top. windowStart() clamps near deck 1, so the offset from the window
+  // start to the deck is the source of truth for where to scroll to.
+  const [anchor, setAnchor] = createSignal<bigint>(requestedIndex)
+
   const [batches, setBatches] = createSignal<ReadonlyMap<number, Uint8Array>>(
     new Map(),
   )
   const [jumpValue, setJumpValue] = createSignal(
-    permutationIndexToPublicDeckNumber(initialIndex).toString(),
+    permutationIndexToPublicDeckNumber(requestedIndex).toString(),
   )
 
   let scrollEl: HTMLDivElement | undefined
-  let source: DeckBatchSource | undefined
 
   const assignScrollEl = (element: HTMLDivElement): void => {
     scrollEl = element
+  }
+
+  // The worker source is a signal so the request effect re-runs when the
+  // worker is created on mount — the initial window must not wait for an
+  // anchor change that never comes when the requested deck is already current.
+  const [source, setSource] = createSignal<DeckBatchSource | undefined>(
+    undefined,
+  )
+
+  // The scrollTop (in px) that puts `deckIndex` at the top of the viewport.
+  function scrollTopFor(deckIndex: bigint): number {
+    return Number(deckIndex - windowStart(anchor(), geometry)) * ROW_HEIGHT
   }
 
   const rows = createMemo<readonly DeckRow[]>(() => {
@@ -96,14 +120,14 @@ export function ExplorerPage() {
     setBatches(next)
   }
 
-  // The single request path: fetch the window around the anchor on mount and
-  // whenever it changes. Stale responses are dropped by the source sequence.
+  // The single request path: fetch the window whenever the anchor changes or
+  // the worker becomes available. Keying on both fixes the initial-load stall
+  // where the anchor was already current, so no change ever fired the effect.
+  // Stale responses are dropped by the source sequence.
   createEffect(
     on(
-      anchor,
-      (currentAnchor) => {
-        const worker = source
-
+      () => [anchor(), source()] as const,
+      ([currentAnchor, worker]) => {
         if (worker === undefined) {
           return
         }
@@ -124,15 +148,7 @@ export function ExplorerPage() {
 
     const scrollRow = scrollEl.scrollTop / ROW_HEIGHT
     const currentAnchor = anchor()
-    let next = recenteredAnchor(currentAnchor, scrollRow, geometry)
-
-    // Never anchor above the first deck: that would surface decks numbered
-    // below 1 near the top of the space. Settle on the first window instead.
-    const minimumAnchor = BigInt(Math.floor(PHYSICAL_ROWS / 2))
-
-    if (next < minimumAnchor) {
-      next = minimumAnchor
-    }
+    const next = recenteredAnchor(currentAnchor, scrollRow, geometry)
 
     if (next === currentAnchor) {
       return
@@ -142,43 +158,55 @@ export function ExplorerPage() {
 
     setAnchor(next)
 
-    // Keep the same logical row under the viewport after re-anchoring. The
-    // window start only moves by whole rows, so this offset is exact; when the
-    // start is pinned at deck 1 the anchor settles on the window center.
+    // Keep the same logical row under the viewport after re-anchoring: shift
+    // the scroll position by how far the window's first row moved.
     const nextStart = windowStart(next, geometry)
     const startShift = Number(nextStart - currentStart)
 
     scrollEl.scrollTop = scrollEl.scrollTop - startShift * ROW_HEIGHT
   }
 
-  function jump(): void {
-    const parsed = parseDeckNumberParam(jumpValue())
+  // Navigate to a deck: anchor it, sync the URL, and scroll it to the top.
+  function navigateTo(deckIndex: bigint): void {
+    const number = permutationIndexToPublicDeckNumber(deckIndex)
+    const clamped = clampAnchor(deckIndex, geometry)
 
-    setSearchParams({
-      deck: permutationIndexToPublicDeckNumber(parsed).toString(),
-    })
-    setAnchor(parsed)
+    setJumpValue(number.toString())
+    setSearchParams({ deck: number.toString() })
+    setAnchor(clamped)
 
     if (scrollEl !== undefined) {
-      scrollEl.scrollTop = (PHYSICAL_ROWS / 2) * ROW_HEIGHT
+      scrollEl.scrollTop =
+        Number(clamped - windowStart(clamped, geometry)) * ROW_HEIGHT
     }
   }
 
+  function jump(): void {
+    navigateTo(parseDeckNumberParam(jumpValue()))
+  }
+
+  // Draw a uniformly random deck and navigate to it, surfacing its real number.
+  function randomize(): void {
+    navigateTo(randomPermutationIndex(cryptoEntropy))
+  }
+
   onMount(() => {
-    source = new DeckBatchSource(
-      () =>
-        new Worker(new URL('./worker/explorer.worker.ts', import.meta.url), {
-          type: 'module',
-        }),
+    setSource(
+      new DeckBatchSource(
+        () =>
+          new Worker(new URL('./worker/explorer.worker.ts', import.meta.url), {
+            type: 'module',
+          }),
+      ),
     )
 
     if (scrollEl !== undefined) {
-      scrollEl.scrollTop = (PHYSICAL_ROWS / 2) * ROW_HEIGHT
+      scrollEl.scrollTop = scrollTopFor(requestedIndex)
     }
   })
 
   onCleanup(() => {
-    source?.terminate()
+    source()?.terminate()
   })
 
   return (
@@ -205,6 +233,9 @@ export function ExplorerPage() {
             />
           </label>
           <button type="submit">Jump</button>
+          <button type="button" class="random-button" onClick={randomize}>
+            Random
+          </button>
         </form>
 
         <p class="explorer-meta">
