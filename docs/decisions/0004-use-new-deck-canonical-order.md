@@ -1,6 +1,6 @@
 # 0004: Use new-deck canonical order
 
-- Status: accepted
+- Status: accepted (card-ID retention superseded by [0005](0005-assign-card-ids-in-canonical-order.md))
 - Date: 2026-08-28
 - Supersedes: [0002: Define canonical card order](0002-define-canonical-card-order.md)
 
@@ -23,10 +23,12 @@ Jokers and advertising cards are excluded. Public deck `52!` remains the lexicog
 
 Card IDs remain the zero-based suit-major identifiers established by decision 0002. The canonical permutation sequence refers to those IDs in new-deck order, separating stable card identity from permutation rank.
 
+> **Update (2026-08-28):** [Decision 0005](0005-assign-card-ids-in-canonical-order.md) superseded this paragraph before any public exposure. Card IDs are now sequential in canonical deck order, so `CANONICAL_DECK` is the identity sequence. The canonical sequence defined above is unchanged.
+
 ## Alternatives Considered
 
 - Keep card IDs in ascending order as the canonical deck. This is mathematically convenient but carries no useful physical meaning.
-- Reassign card IDs to match new-deck order. This would unnecessarily change card identity as well as permutation meaning.
+- ~~Reassign card IDs to match new-deck order. This would unnecessarily change card identity as well as permutation meaning.~~ Revisited and adopted by [decision 0005](0005-assign-card-ids-in-canonical-order.md): with no public exposure yet, aligning identity with canonical position proved to be the cheaper and clearer contract.
 - Claim a manufacturer-independent official order. No universal new-deck order exists, so the project adopts one commonly reported USPCC-style convention and fixes its orientation explicitly.
 
 ## Consequences
