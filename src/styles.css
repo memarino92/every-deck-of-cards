@@ -426,3 +426,276 @@ footer a {
     scroll-behavior: auto !important;
   }
 }
+
+/* -------------------------------------------------------------------------
+   Explorer: a precision instrument over the permutation space.
+   Dark neutral frame, monospace deck numbers, and real playing cards fanned
+   left to right. The cards are the exhibit; the chrome stays quiet.
+   ------------------------------------------------------------------------- */
+
+.explorer {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: clamp(1rem, 2.5vh, 2rem);
+  width: min(100%, 110rem);
+  margin: 0 auto;
+}
+
+.explorer-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1.25rem 2rem;
+  padding-top: clamp(1rem, 3vh, 2rem);
+}
+
+.explorer-heading h1 {
+  max-width: none;
+  margin: 0;
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.explorer-heading .eyebrow {
+  margin-bottom: 0.75rem;
+}
+
+.jump {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-family: ui-monospace, 'Cascadia Code', monospace;
+  font-size: 0.85rem;
+}
+
+.jump label {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.jump label span {
+  color: #91ad9d;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-size: 0.7rem;
+}
+
+.jump input {
+  width: 22rem;
+  max-width: 40vw;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid rgb(244 234 210 / 25%);
+  border-radius: 0.3rem;
+  background: rgb(0 0 0 / 25%);
+  color: #f4ead2;
+  font: inherit;
+}
+
+.jump input:focus-visible {
+  outline: 2px solid #d6aa5d;
+  outline-offset: 1px;
+}
+
+.jump button {
+  padding: 0.4rem 1.1rem;
+  border: 1px solid #c49745;
+  border-radius: 0.3rem;
+  background: transparent;
+  color: #f4ead2;
+  font: inherit;
+  cursor: pointer;
+}
+
+.jump button:hover {
+  background: rgb(196 143 53 / 15%);
+}
+
+.explorer-meta {
+  margin: 0;
+  color: #91ad9d;
+  font-family: ui-monospace, 'Cascadia Code', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
+}
+
+.explorer-scroll {
+  position: relative;
+  height: min(78vh, 72rem);
+  overflow-y: auto;
+  border: 1px solid rgb(244 234 210 / 12%);
+  border-radius: 0.5rem;
+  background: linear-gradient(rgb(0 0 0 / 18%), rgb(0 0 0 / 18%)), #0b0e0c;
+  scrollbar-color: #c49745 transparent;
+}
+
+.explorer-window {
+  position: relative;
+}
+
+.deck-row {
+  display: flex;
+  align-items: center;
+  gap: clamp(0.75rem, 2vw, 1.75rem);
+  padding: 0 clamp(0.75rem, 2vw, 1.5rem);
+  border-bottom: 1px solid rgb(244 234 210 / 7%);
+}
+
+.deck-number {
+  flex: none;
+  min-width: 16ch;
+  color: #d6aa5d;
+  font-family: ui-monospace, 'Cascadia Code', monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  overflow-wrap: anywhere;
+}
+
+.deck-fan {
+  position: relative;
+  flex: 1;
+  height: 100%;
+  min-width: 0;
+}
+
+.deck-loading {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #5d6f63;
+  font-family: ui-monospace, 'Cascadia Code', monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* Fan: 52 cards overlapped right to left, face card (position 0) rightmost
+   and on top. Each card's right edge steps in from the row's right edge, so
+   every card is covered on its right and you read the upright top-left pips
+   scanning left to right — the way a fresh deck spreads. */
+.deck-card {
+  position: absolute;
+  top: 50%;
+  right: calc(var(--position) * (100% - var(--card-width)) / 51);
+  transform: translateY(-50%);
+  transition:
+    transform 140ms ease,
+    box-shadow 140ms ease;
+}
+
+.deck-card:hover {
+  transform: translateY(-58%);
+  box-shadow: 0 6px 18px rgb(0 0 0 / 55%);
+}
+
+/* -------------------------------------------------------------------------
+   Playing card face. Sized by --card-width so the fan math and the card
+   agree; the pip area is a positioned plane that pips are placed onto.
+   ------------------------------------------------------------------------- */
+
+.deck-fan {
+  --card-width: clamp(2.4rem, 4.4vw, 3.9rem);
+}
+
+.playing-card {
+  position: relative;
+  display: block;
+  width: var(--card-width);
+  aspect-ratio: 5 / 7;
+  border: 1px solid rgb(13 51 38 / 45%);
+  border-radius: calc(var(--card-width) * 0.09);
+  background: #fbf7ec;
+  color: #1b1b1b;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 45%);
+  font-family: Georgia, 'Times New Roman', serif;
+  user-select: none;
+}
+
+.playing-card.red {
+  color: #a31f2b;
+}
+
+.corner {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 0.9;
+  font-weight: 700;
+}
+
+.corner-rank {
+  font-size: calc(var(--card-width) * 0.2);
+  letter-spacing: -0.02em;
+}
+
+.corner-suit {
+  font-size: calc(var(--card-width) * 0.17);
+}
+
+.corner-top {
+  top: calc(var(--card-width) * 0.06);
+  left: calc(var(--card-width) * 0.07);
+}
+
+.corner-bottom {
+  right: calc(var(--card-width) * 0.07);
+  bottom: calc(var(--card-width) * 0.06);
+  transform: rotate(180deg);
+}
+
+.pips {
+  position: absolute;
+  inset: calc(var(--card-width) * 0.24) calc(var(--card-width) * 0.16);
+}
+
+.pip {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  font-size: calc(var(--card-width) * 0.24);
+  line-height: 1;
+}
+
+/* A single large ace pip. */
+.pips .pip:only-child {
+  font-size: calc(var(--card-width) * 0.5);
+}
+
+.court {
+  position: absolute;
+  inset: calc(var(--card-width) * 0.22) calc(var(--card-width) * 0.16);
+  display: flex;
+  flex-direction: column;
+  border: 1px solid currentColor;
+  border-radius: calc(var(--card-width) * 0.05);
+  overflow: hidden;
+}
+
+.court-half {
+  flex: 1;
+  display: grid;
+  place-content: center;
+  gap: calc(var(--card-width) * 0.02);
+  text-align: center;
+  line-height: 1;
+}
+
+.court-half-flip {
+  transform: rotate(180deg);
+}
+
+.court-glyph {
+  font-size: calc(var(--card-width) * 0.34);
+}
+
+.court-divider {
+  height: 1px;
+  background: currentColor;
+  opacity: 0.55;
+}
+
+.court .court-suit {
+  font-size: calc(var(--card-width) * 0.22);
+}

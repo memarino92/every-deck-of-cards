@@ -21,10 +21,9 @@ export function HomePage() {
           enumerate. This site will make every one of them addressable.
         </p>
         <p class="construction">
-          The explorer is being built in public. The reversible mathematics,
-          workers, virtual scrolling, tests, and benchmarks will be part of the
-          exhibit. Curious how that's possible?{' '}
-          <A href="/why">Read why this exists</A>.
+          The explorer is live: <A href="/explore">scroll every deck</A>, or
+          jump straight to any one of them by number. Curious how that's
+          possible? <A href="/why">Read why this exists</A>.
         </p>
       </div>
     </section>

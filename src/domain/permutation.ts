@@ -72,3 +72,55 @@ export function rankPermutation<T>(
 
   return index
 }
+
+/**
+ * Advance `permutation` to the next ordering in the same lexicographic
+ * sequence `unrankPermutation` produces — that is, from index `i` to index
+ * `i + 1` — using the standard in-place algorithm. Mutates and returns the
+ * given array; returns `false` (leaving the array as the final ordering) when
+ * already at the last permutation.
+ *
+ * This is the cheap way to walk consecutive decks while scrolling: stepping
+ * costs one comparison sweep and a suffix reversal with no bigint division,
+ * versus a full factoradic unrank per deck. Stepping requires that array
+ * order matches canonical order, so it is typed on the numeric card-ID deck.
+ */
+export function nextPermutation(permutation: number[]): boolean {
+  let pivot = permutation.length - 2
+
+  while (
+    pivot >= 0 &&
+    (permutation[pivot] as number) > (permutation[pivot + 1] as number)
+  ) {
+    pivot -= 1
+  }
+
+  if (pivot < 0) {
+    return false
+  }
+
+  let successor = permutation.length - 1
+
+  while ((permutation[successor] as number) < (permutation[pivot] as number)) {
+    successor -= 1
+  }
+
+  ;[permutation[pivot], permutation[successor]] = [
+    permutation[successor] as number,
+    permutation[pivot] as number,
+  ]
+
+  let left = pivot + 1
+  let right = permutation.length - 1
+
+  while (left < right) {
+    ;[permutation[left], permutation[right]] = [
+      permutation[right] as number,
+      permutation[left] as number,
+    ]
+    left += 1
+    right -= 1
+  }
+
+  return true
+}

@@ -28,6 +28,8 @@ The browser cannot create a scroll area with `52!` rows. A bounded fixed-height 
 
 Pure ranking and unranking functions will be directly testable. The UI will request contiguous batches from a Web Worker. Results will use flat typed arrays and transferable buffers to avoid cloning card objects.
 
+Because the explorer walks adjacent indices, batch production unranked the first deck fully and then steps deck-to-deck with the domain's in-place `nextPermutation` (index `i` → `i + 1`) rather than re-running the factoradic unrank per deck. Random access by deck number still unranked directly, so the rank/unrank bijection remains the authority.
+
 ## Documentation
 
 Technical documentation will be part of the application and reusable in a full-screen talk mode. The first shipped pieces are a `/why` page answering "how does this work and why does it exist" and an interactive factoradic explainer that walks the ranking algorithm with decks of 2 through 5 cards before extrapolating to 52. Durable plans and architecture decisions remain readable Markdown in the repository. Claims about scale or performance must expose assumptions, sources, and reproducible calculations; explainer content computes its tables and examples from the tested domain at render time rather than hardcoding results.
