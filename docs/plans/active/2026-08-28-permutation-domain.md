@@ -17,7 +17,7 @@ Define the canonical 52-card deck and implement a pure, reversible mapping betwe
 - Worker transport and batching.
 - Virtual scrolling and rendering full deck ribbons.
 - Curated favorite decks beyond proving arbitrary decks can be ranked.
-- A drag-to-reorder deck editor with live number updates.
+- A drag-to-reorder deck editor with live number updates and its randomize shuffle (see the deck editor plan).
 - Selecting a production batching strategy.
 
 # Context
@@ -39,7 +39,7 @@ Public deck numbers will range from `1` through `52!`; domain indices range from
 
 # Test Plan
 
-- Verify the canonical deck contract and card metadata.
+- Verify the canonical deck contract and card metadata, including sequential card IDs in canonical deck order (`CANONICAL_DECK[p] === p` for every position).
 - Verify known complete mappings for a three-item collection.
 - Exhaustively rank and unrank every permutation for collection sizes zero through eight.
 - Exercise representative boundaries and deterministic large indices at 52 cards.
@@ -75,21 +75,25 @@ Public deck numbers will range from `1` through `52!`; domain indices range from
 - [x] Add verified benchmark candidates and benchmark entry points.
 - [x] Link the application to its public source.
 - [x] Run all quality gates and record outcomes.
+- [x] Reassign card IDs sequentially in canonical deck order per decision 0005, rewrite card-domain tests, and rerun all quality gates.
 
 # Decisions Made
 
 - Assign stable card IDs in suit-major order, but use the project's adopted USPCC-style new-deck order as the canonical permutation sequence under decision 0004.
+- Superseded by decision 0005 before any public exposure: card IDs are now assigned sequentially in canonical deck order, so `CANONICAL_DECK` is the identity sequence. See the deviation below.
 - Define deck `1` as the canonical ordering and deck `52!` as its lexicographic reverse.
 - Start with array-splice unranking in production because it is the smallest auditable implementation; benchmark the Fenwick alternative before making speed claims.
 - Precompute and freeze factorials from `0!` through `52!`; repeated multiplication obscured selection costs and is unnecessary for immutable domain constants.
 - Use SameValueZero-compatible matching for the generic permutation API so `NaN`, signed zero, and duplicate validation use one equality relation.
 - Retain the shrinking-array implementation after three standalone benchmark processes ran the mixed corpus in both registration orders and found no stable material Fenwick advantage. Treat simplicity as the primary reason and the timings as order-sensitive observational evidence.
+- Raise the language floor alongside the ID realignment: the project targets ES2024 with ESNext TypeScript libs as greenfield policy (AGENTS.md), letting the domain use `toReversed` directly rather than explicit index math.
 
 # Deviations
 
 - The initial benchmark used only three fixed indices and a Fenwick prototype with repeated setup work. Review prompted linear tree initialization, cached search state, observable result consumption, a deterministic 64-index corpus, explicit timing options, and 52-card candidate equivalence tests before recording results.
 - Runtime validation was strengthened after review to reject coerced card IDs and to freeze exported rank and suit contracts.
 - Production launch work superseded the original canonical sequence before public deck-number links shipped. Card IDs remain stable, while deck `1` now follows the project's adopted USPCC-style new-deck order as recorded in decision 0004.
+- After launch, review of the shipped contract found the retained suit-major card IDs to be the wrong call: the canonical deck's IDs were not sequential, which undermines the explainer material and leaves two orderings to reconcile forever. Because neither card IDs nor deck numbers have ever been publicly exposed, decision 0005 realigns IDs to canonical position as the closing task of this plan. This is the final change permitted to either half of the compatibility contract.
 
 # Verification Evidence
 
@@ -105,9 +109,18 @@ Public deck numbers will range from `1` through `52!`; domain indices range from
 - Domain, performance, and security subagent reviews completed; all correctness findings were addressed and no security findings remained.
 - This evidence predates the canonical-order change. Replacement domain and full-suite verification is recorded in the production launch plan.
 
+## Card-ID realignment (decision 0005, 2026-08-28)
+
+- TypeScript language targets raised as part of the same change: `"lib": ["ESNext", "DOM", "DOM.Iterable"]` and `"target": "ES2024"` in `tsconfig.json`, `target: 'es2024'` in `vite.config.ts`; policy recorded in AGENTS.md.
+- `pnpm.cmd format:check`: passed.
+- `pnpm.cmd lint`: passed with 196 rules, zero warnings, and zero errors.
+- `pnpm.cmd typecheck`: passed with TypeScript 7.0.2 against ESNext libs.
+- `pnpm.cmd test`: passed 60 tests across five files, including sequential-ID and identity-sequence assertions for `CANONICAL_DECK` and all permutation round trips unchanged. A separate runtime sanity check confirmed `CANONICAL_DECK[p] === p` for all positions, endpoint cards (0 = ace of spades, 51 = ace of hearts), and `rank(unrank(0)) === 0`.
+- `pnpm.cmd build`: passed; production JavaScript is 4.62 kB gzip.
+
 # Outcome
 
-The branch now defines and verifies the canonical card contract, one-based public deck numbers, zero-based `bigint` indices, and reversible factoradic ranking. The simpler shrinking-array implementation remains in production; the independently tested Fenwick candidate and transparent benchmark evidence remain available for future browser and worker comparisons. The public site links to its GitHub repository.
+The domain is final and frozen. It defines and verifies the canonical card contract with card IDs sequential in canonical deck order (decision 0005), one-based public deck numbers, zero-based `bigint` indices, and reversible factoradic ranking. The simpler shrinking-array implementation remains in production; the independently tested Fenwick candidate and transparent benchmark evidence remain available for future browser and worker comparisons. The public site links to its GitHub repository.
 
 # Related Commits
 
