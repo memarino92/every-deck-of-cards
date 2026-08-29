@@ -206,6 +206,196 @@ footer a {
   font-style: italic;
 }
 
+.permutation-table {
+  width: 100%;
+  max-width: 22rem;
+  margin: 1rem 0;
+  border-collapse: collapse;
+  font-family: ui-monospace, 'Cascadia Code', monospace;
+  font-size: 0.9rem;
+}
+
+.permutation-table th,
+.permutation-table td {
+  padding: 0.3rem 0.75rem;
+  border-bottom: 1px solid rgb(196 143 53 / 25%);
+  text-align: left;
+}
+
+.permutation-table th {
+  color: #d6aa5d;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 0.72rem;
+}
+
+.permutation-table .index {
+  color: #91ad9d;
+}
+
+.permutation-table tr.selectable {
+  cursor: pointer;
+}
+
+.permutation-table tr.selectable:hover td {
+  background: rgb(196 143 53 / 10%);
+}
+
+.stepper {
+  margin: 1rem 0 1.5rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid rgb(196 143 53 / 35%);
+  border-radius: 0.5rem;
+  background: rgb(196 143 53 / 5%);
+}
+
+.stepper-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  font-family: ui-monospace, 'Cascadia Code', monospace;
+  font-size: 0.85rem;
+}
+
+.stepper-controls input {
+  width: 6.5rem;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid rgb(196 143 53 / 40%);
+  border-radius: 0.25rem;
+  background: #0d3326;
+  color: #f4ead2;
+  font: inherit;
+}
+
+.stepper-controls button {
+  padding: 0.3rem 0.9rem;
+  border: 1px solid #c49745;
+  border-radius: 0.25rem;
+  background: transparent;
+  color: #f4ead2;
+  font: inherit;
+  cursor: pointer;
+}
+
+.stepper-controls button:hover:not(:disabled) {
+  background: rgb(196 143 53 / 15%);
+}
+
+.stepper-controls button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.stepper-progress {
+  color: #91ad9d;
+}
+
+.stepper-stage {
+  margin-top: 1rem;
+}
+
+.stepper-pool {
+  margin: 0 0 0.75rem;
+}
+
+.stepper-card {
+  display: inline-block;
+  min-width: 2rem;
+  margin-right: 0.35rem;
+  padding: 0.25rem 0.4rem;
+  border: 1px solid rgb(244 234 210 / 35%);
+  border-radius: 0.25rem;
+  text-align: center;
+  font-family: ui-monospace, 'Cascadia Code', monospace;
+}
+
+.stepper-card.selected {
+  border-color: #d6aa5d;
+  background: #d6aa5d;
+  color: #0d3326;
+  font-weight: 700;
+}
+
+.stepper-math,
+.stepper-result {
+  margin: 0 0 0.5rem;
+  font-family: ui-monospace, 'Cascadia Code', monospace;
+  font-size: 0.9rem;
+  color: #f4ead2;
+}
+
+.stepper-result {
+  color: #91ad9d;
+}
+
+.talk {
+  display: grid;
+  min-height: 100vh;
+  grid-template-rows: 1fr auto;
+  padding: clamp(1.5rem, 4vw, 4rem);
+}
+
+.talk-slide {
+  display: grid;
+  align-content: center;
+  width: min(100%, 70rem);
+  margin: 0 auto;
+}
+
+.talk-progress {
+  margin: 0 0 1rem;
+  color: #91ad9d;
+  font-family: ui-monospace, 'Cascadia Code', monospace;
+  font-size: 0.8rem;
+  letter-spacing: 0.1em;
+}
+
+.talk-slide h1 {
+  max-width: none;
+  margin: 0 0 2rem;
+  font-size: clamp(2.6rem, 7vw, 6rem);
+  font-weight: 400;
+  letter-spacing: -0.05em;
+  line-height: 0.95;
+}
+
+.talk-body {
+  font-size: clamp(1.2rem, 2.4vw, 1.8rem);
+  line-height: 1.55;
+}
+
+.talk-body .permutation-table {
+  font-size: clamp(0.85rem, 1.6vw, 1.15rem);
+}
+
+.talk-controls {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.talk-controls button {
+  padding: 0.6rem 1.4rem;
+  border: 1px solid #c49745;
+  border-radius: 0.35rem;
+  background: transparent;
+  color: #f4ead2;
+  font-family: ui-monospace, 'Cascadia Code', monospace;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.talk-controls button:hover:not(:disabled) {
+  background: rgb(196 143 53 / 15%);
+}
+
+.talk-controls button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
 @media (max-width: 640px) {
   .status {
     display: none;
