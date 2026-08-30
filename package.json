@@ -17,6 +17,7 @@
     "lint": "oxlint .",
     "preview": "vite preview",
     "test": "vitest run",
+    "test:e2e": "playwright test",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit"
   },
@@ -25,6 +26,7 @@
     "solid-js": "1.9.15"
   },
   "devDependencies": {
+    "@playwright/test": "1.62.1",
     "@solidjs/testing-library": "0.8.10",
     "@types/node": "26.3.0",
     "eslint": "10.9.1",

@@ -10,42 +10,32 @@ import {
   windowStart,
 } from './window.ts'
 
-const geometry = createWindowGeometry(101, 20)
+const geometry = createWindowGeometry(101)
 
 describe('window geometry', () => {
   it('rejects non-positive and non-integer dimensions', () => {
-    expect(() => createWindowGeometry(0, 10)).toThrow(RangeError)
-    expect(() => createWindowGeometry(101, 0)).toThrow(RangeError)
-    expect(() => createWindowGeometry(100.5, 10)).toThrow(RangeError)
-    expect(() => createWindowGeometry(101, 10.5)).toThrow(RangeError)
-  })
-
-  it('rejects overscan that swallows the window', () => {
-    expect(() => createWindowGeometry(40, 20)).toThrow(RangeError)
-    expect(() => createWindowGeometry(41, 21)).toThrow(RangeError)
+    expect(() => createWindowGeometry(0)).toThrow(RangeError)
+    expect(() => createWindowGeometry(-3)).toThrow(RangeError)
+    expect(() => createWindowGeometry(100.5)).toThrow(RangeError)
   })
 })
 
 describe('anchor clamping', () => {
   it('clamps a negative desired anchor to zero', () => {
-    expect(clampAnchor(-5n, geometry)).toBe(0n)
+    expect(clampAnchor(-5n)).toBe(0n)
   })
 
-  it('clamps an anchor past the end so the window ends at the last deck', () => {
-    const maxAnchor = LAST_INDEX - BigInt(geometry.physicalRowCount - 1)
-
-    expect(clampAnchor(LAST_INDEX, geometry)).toBe(maxAnchor)
-    expect(clampAnchor(DECK_COUNT, geometry)).toBe(maxAnchor)
+  it('lets the anchor reach the last deck, clamping only past it', () => {
+    expect(clampAnchor(LAST_INDEX)).toBe(LAST_INDEX)
+    expect(clampAnchor(DECK_COUNT)).toBe(LAST_INDEX)
   })
 
   it('leaves an in-range anchor unchanged', () => {
-    expect(clampAnchor(1_000_000n, geometry)).toBe(1_000_000n)
+    expect(clampAnchor(1_000_000n)).toBe(1_000_000n)
   })
 
   it('rejects a non-bigint anchor', () => {
-    expect(() => clampAnchor(5 as unknown as bigint, geometry)).toThrow(
-      RangeError,
-    )
+    expect(() => clampAnchor(5 as unknown as bigint)).toThrow(RangeError)
   })
 })
 
@@ -103,15 +93,18 @@ describe('logical index at', () => {
 describe('recentering', () => {
   const anchor = 1_000_000n
 
-  it('keeps the anchor while the viewport stays within overscan of center', () => {
-    // Center of a 101-row window is scroll row 50. Overscan 20 means no
-    // recenter while the viewport top is within [30, 70].
-    expect(recenteredAnchor(anchor, 50, geometry)).toBe(anchor)
-    expect(recenteredAnchor(anchor, 60, geometry)).toBe(anchor)
-    expect(recenteredAnchor(anchor, 40, geometry)).toBe(anchor)
+  it('tracks the deck under the viewport center on every scroll', () => {
+    // No deadband: the anchor always moves to the logical row under the
+    // viewport's center (window start + scrollRow + a quarter window). With a
+    // 101-row window the quarter is 25, so the anchor lands 25 rows past the
+    // viewport top.
+    // windowStart(anchor) = anchor - 50.
+    expect(recenteredAnchor(anchor, 50, geometry)).toBe(anchor + 25n)
+    expect(recenteredAnchor(anchor, 60, geometry)).toBe(anchor + 35n)
+    expect(recenteredAnchor(anchor, 40, geometry)).toBe(anchor + 15n)
   })
 
-  it('recenters when the viewport drifts past overscan', () => {
+  it('recenters toward the deck the viewport has scrolled to', () => {
     const result = recenteredAnchor(anchor, 90, geometry)
 
     expect(result).not.toBe(anchor)
@@ -149,15 +142,34 @@ describe('recentering', () => {
 
     // And an anchor that recentering would push below zero clamps to 0: a
     // viewport center above the first deck cannot produce a negative anchor.
-    const clamped = clampAnchor(-1n, geometry)
+    const clamped = clampAnchor(-1n)
     expect(clamped).toBe(0n)
   })
 
-  it('clamps recentering at the end of the space', () => {
+  it('clamps recentering at the last deck', () => {
+    // Anchor pinned at the end; scrolling down cannot push the anchor past
+    // the final deck, and windowStart pins the window so the last deck shows.
     const result = recenteredAnchor(LAST_INDEX, 90, geometry)
-    const maxAnchor = LAST_INDEX - BigInt(geometry.physicalRowCount - 1)
 
-    expect(result).toBe(maxAnchor)
+    expect(result).toBe(LAST_INDEX)
+    expect(windowStart(result, geometry)).toBe(
+      LAST_INDEX - BigInt(geometry.physicalRowCount - 1),
+    )
+  })
+
+  it('makes the last deck the final row of the pinned end window', () => {
+    // Regression guard for the end-of-space dead zone: when the anchor is at
+    // the last deck, the window's final physical row must be that deck, not
+    // half a window short of it.
+    const start = windowStart(LAST_INDEX, geometry)
+    const last = logicalIndexAt(
+      LAST_INDEX,
+      geometry.physicalRowCount - 1,
+      geometry,
+    )
+
+    expect(start).toBe(LAST_INDEX - BigInt(geometry.physicalRowCount - 1))
+    expect(last).toBe(LAST_INDEX)
   })
 
   it('rejects an invalid scroll row', () => {
