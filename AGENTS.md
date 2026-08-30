@@ -39,6 +39,7 @@
 - Before committing, inspect `git status`, the complete diff, and recent history.
 - Never use destructive Git commands to discard work without explicit approval.
 - Never force-push.
+- For `gh pr create`/`gh issue create` on Windows, write the body to a file and pass `--body-file`; PowerShell mangles long quoted `--body` strings containing backticks or quotes.
 
 ## Security
 
