@@ -29,7 +29,7 @@ A later interactive mode will let visitors drag cards into any ordering and watc
 - Vite for the client-only application and Web Worker bundles
 - Oxlint and Prettier for static analysis and formatting
 - Vitest for domain tests and benchmarks
-- Playwright for browser behavior and rendering performance (planned)
+- Playwright for end-to-end tests of emergent browser behavior
 - Cloudflare Workers Static Assets at `everydeckof.cards` with no application Worker runtime
 - pnpm for dependency management
 
@@ -53,6 +53,16 @@ pnpm lint
 pnpm typecheck
 pnpm test
 pnpm build
+```
+
+End-to-end tests run in a real browser against the dev server. They cover
+behavior that is emergent between the browser and the app (for example,
+scrolling the explorer to the very last deck), which unit tests cannot
+reproduce faithfully. Install the browser once, then run the suite:
+
+```sh
+pnpm exec playwright install chromium
+pnpm test:e2e
 ```
 
 `wrangler.jsonc` is the Cloudflare deployment source of truth. [Cloudflare recommends JSONC for new projects](https://developers.cloudflare.com/workers/wrangler/configuration/); it configures the production custom domain and SPA fallback without an application Worker. Run `pnpm deploy` only with an authenticated Cloudflare account that controls the `everydeckof.cards` zone.
