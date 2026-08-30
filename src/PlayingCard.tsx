@@ -151,8 +151,7 @@ export function PlayingCard(props: { id: CardId }) {
 
   return (
     <div
-      class="playing-card"
-      classList={{ red: face().isRed }}
+      class={['playing-card', { red: face().isRed }]}
       aria-label={`${face().rankLabel} of ${cardFromId(props.id).suit}`}
     >
       <span class="corner corner-top">

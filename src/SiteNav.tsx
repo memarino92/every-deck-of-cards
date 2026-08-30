@@ -1,14 +1,10 @@
-import { A } from '@solidjs/router'
-
 export function SiteNav() {
   return (
     <nav class="site-nav" aria-label="Site">
-      <A href="/" end>
-        Home
-      </A>
-      <A href="/explore">Explore</A>
-      <A href="/why">Why?</A>
-      <A href="/how">How?</A>
+      <a href="/">Home</a>
+      <a href="/explore">Explore</a>
+      <a href="/why">Why?</a>
+      <a href="/how">How?</a>
     </nav>
   )
 }

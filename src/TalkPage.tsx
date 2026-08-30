@@ -1,5 +1,5 @@
-import { Show, createSignal, onCleanup, onMount } from 'solid-js'
-import type { JSX } from 'solid-js'
+import { Show, createSignal, onSettled } from 'solid-js'
+import type { JSX } from '@solidjs/web'
 
 import { DECK_COUNT } from './domain/deck-number.ts'
 import { factorial } from './domain/factorial.ts'
@@ -107,8 +107,10 @@ export function TalkPage() {
     }
   }
 
-  onMount(() => window.addEventListener('keydown', onKeyDown))
-  onCleanup(() => window.removeEventListener('keydown', onKeyDown))
+  onSettled(() => {
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  })
 
   return (
     <div class="talk">

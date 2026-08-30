@@ -4,9 +4,8 @@ import {
   createMemo,
   createSignal,
   For,
-  on,
-  onCleanup,
-  onMount,
+  onSettled,
+  untrack,
 } from 'solid-js'
 
 import { CARD_COUNT, type CardId } from './domain/cards.ts'
@@ -53,8 +52,12 @@ interface DeckRow {
  */
 export function ExplorerPage() {
   const [searchParams, setSearchParams] = useSearchParams()
-  const raw = searchParams['deck']
-  const requestedIndex = parseDeckNumberParam(Array.isArray(raw) ? raw[0] : raw)
+  // Read once at mount: the requested deck seeds the anchor; later `deck`
+  // param changes come from this page's own navigations, not back at it.
+  const requestedIndex = untrack(() => {
+    const raw = searchParams['deck']
+    return parseDeckNumberParam(Array.isArray(raw) ? raw[0] : raw)
+  })
 
   // Anchor the requested deck, then place the viewport so that deck sits at
   // the top. windowStart() clamps near deck 1, so the offset from the window
@@ -126,20 +129,17 @@ export function ExplorerPage() {
   // where the anchor was already current, so no change ever fired the effect.
   // Stale responses are dropped by the source sequence.
   createEffect(
-    on(
-      () => [anchor(), source()] as const,
-      ([currentAnchor, worker]) => {
-        if (worker === undefined) {
-          return
-        }
+    () => [anchor(), source()] as const,
+    ([currentAnchor, worker]) => {
+      if (worker === undefined) {
+        return
+      }
 
-        worker
-          .request(windowStart(currentAnchor, geometry), PHYSICAL_ROWS)
-          .then(handleResponse)
-          .catch(ignoreRejection)
-      },
-      { defer: false },
-    ),
+      worker
+        .request(windowStart(currentAnchor, geometry), PHYSICAL_ROWS)
+        .then(handleResponse)
+        .catch(ignoreRejection)
+    },
   )
 
   function handleScroll(): void {
@@ -202,23 +202,20 @@ export function ExplorerPage() {
     navigateTo(publicDeckNumberToIndex(FIRST_DECK_NUMBER))
   }
 
-  onMount(() => {
-    setSource(
-      new DeckBatchSource(
-        () =>
-          new Worker(new URL('./worker/explorer.worker.ts', import.meta.url), {
-            type: 'module',
-          }),
-      ),
+  onSettled(() => {
+    const workerSource = new DeckBatchSource(
+      () =>
+        new Worker(new URL('./worker/explorer.worker.ts', import.meta.url), {
+          type: 'module',
+        }),
     )
+    setSource(workerSource)
 
     if (scrollEl !== undefined) {
       scrollEl.scrollTop = scrollTopFor(requestedIndex)
     }
-  })
 
-  onCleanup(() => {
-    source()?.terminate()
+    return () => workerSource.terminate()
   })
 
   return (

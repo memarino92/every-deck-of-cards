@@ -37,7 +37,7 @@ export function PermutationTable(props: {
           {(row) => (
             <tr
               onClick={() => props.onSelect?.(row.index)}
-              classList={{ selectable: props.onSelect !== undefined }}
+              class={{ selectable: props.onSelect !== undefined }}
             >
               <td class="index">{row.index.toString()}</td>
               <td>{row.permutation.join(' ')}</td>

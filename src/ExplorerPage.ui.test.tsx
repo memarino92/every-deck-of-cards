@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 import { render, screen, waitFor } from '@solidjs/testing-library'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -6,9 +5,9 @@ import { CARD_COUNT } from '@/domain/cards.ts'
 import { unrankBatch } from '@/worker/batch.ts'
 import type { BatchRequest, BatchResponse } from '@/worker/explorer.worker.ts'
 
-// The router provides useSearchParams; render the page inside a memory router
-// primed to /explore so the explorer mounts the way it does in production.
-import { createMemoryHistory, MemoryRouter, Route } from '@solidjs/router'
+// The router provides useSearchParams; render the page inside a memory-history
+// router primed to /explore so the explorer mounts the way it does in production.
+import { createRouter, memoryHistory } from '@solidjs/router'
 import { cleanup } from '@solidjs/testing-library'
 
 import { ExplorerPage } from '@/ExplorerPage.tsx'
@@ -51,14 +50,12 @@ class FakeWorker {
 }
 
 function renderExplorer(): void {
-  const history = createMemoryHistory()
-  history.set({ value: '/explore', scroll: false, replace: true })
+  const Router = createRouter({
+    routes: [{ path: '/explore', component: ExplorerPage }],
+    history: memoryHistory('/explore'),
+  })
 
-  render(() => (
-    <MemoryRouter history={history}>
-      <Route path="/explore" component={ExplorerPage} />
-    </MemoryRouter>
-  ))
+  render(() => <Router>{(props) => props.children}</Router>)
 }
 
 describe('ExplorerPage initial load', () => {

@@ -1,5 +1,3 @@
-import { A } from '@solidjs/router'
-
 import { factorial } from './domain/factorial.ts'
 
 const deckCount = factorial(52).toLocaleString('en-US')
@@ -21,9 +19,9 @@ export function HomePage() {
           enumerate. This site will make every one of them addressable.
         </p>
         <p class="construction">
-          The explorer is live: <A href="/explore">scroll every deck</A>, or
+          The explorer is live: <a href="/explore">scroll every deck</a>, or
           jump straight to any one of them by number. Curious how that's
-          possible? <A href="/why">Read why this exists</A>.
+          possible? <a href="/why">Read why this exists</a>.
         </p>
       </div>
     </section>
