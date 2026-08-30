@@ -1,4 +1,3 @@
-import { A } from '@solidjs/router'
 import { createSignal } from 'solid-js'
 
 import { DECK_COUNT } from './domain/deck-number.ts'
@@ -92,7 +91,7 @@ export function HowPage() {
           and every shareable link is just a number waiting for the recipe.
         </p>
         <p class="construction">
-          Presenting this material? <A href="/talk">Open talk mode</A> — the
+          Presenting this material? <a href="/talk">Open talk mode</a> — the
           same walkthrough, full-screen, one idea per screen.
         </p>
       </section>

@@ -22,12 +22,14 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@solidjs/router": "1.0.0",
-    "solid-js": "1.9.15"
+    "@solidjs/router": "2.0.0-next.19",
+    "@solidjs/web": "2.0.0-rc.4",
+    "solid-js": "2.0.0-rc.4"
   },
   "devDependencies": {
     "@playwright/test": "1.62.1",
-    "@solidjs/testing-library": "0.8.10",
+    "@solidjs/testing-library": "1.0.0-beta.2",
+    "@solidjs/vite-plugin": "3.0.0-next.35",
     "@types/node": "26.3.0",
     "eslint": "10.9.1",
     "eslint-plugin-solid": "0.16.1",
@@ -36,7 +38,6 @@
     "prettier": "3.9.6",
     "typescript": "7.0.2",
     "vite": "8.2.2",
-    "vite-plugin-solid": "2.11.14",
     "vitest": "4.1.11",
     "wrangler": "4.127.0"
   }

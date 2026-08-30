@@ -69,7 +69,7 @@ footer {
   color: #f4ead2;
 }
 
-.site-nav a.active {
+.site-nav a[data-active] {
   color: #d6aa5d;
   text-decoration: underline;
   text-underline-offset: 0.3em;

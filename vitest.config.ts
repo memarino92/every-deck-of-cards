@@ -1,6 +1,6 @@
 import { fileURLToPath } from 'node:url'
 
-import solid from 'vite-plugin-solid'
+import solid from '@solidjs/vite-plugin'
 import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
@@ -17,9 +17,27 @@ export default defineConfig({
     },
   },
   test: {
-    environment: 'node',
-    include: ['benchmarks/**/*.test.ts', 'src/**/*.test.{ts,tsx}'],
-    // UI component tests opt into jsdom individually via a
-    // `// @vitest-environment jsdom` docblock at the top of the file.
+    // The plugin sets the framework's export conditions from each project's
+    // environment: jsdom (the default test posture) resolves the client build
+    // of @solidjs/web, node resolves the server build. Component tests and
+    // pure-domain tests therefore live in separate projects.
+    projects: [
+      {
+        extends: true,
+        test: {
+          name: 'client',
+          environment: 'jsdom',
+          include: ['src/**/*.test.tsx'],
+        },
+      },
+      {
+        extends: true,
+        test: {
+          name: 'node',
+          environment: 'node',
+          include: ['benchmarks/**/*.test.ts', 'src/**/*.test.ts'],
+        },
+      },
+    ],
   },
 })

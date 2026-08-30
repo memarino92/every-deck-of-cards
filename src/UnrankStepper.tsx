@@ -1,4 +1,4 @@
-import { Index, Show, createMemo, createSignal } from 'solid-js'
+import { For, Show, createMemo, createSignal } from 'solid-js'
 
 import { traceUnrank } from './domain/trace.ts'
 
@@ -77,16 +77,15 @@ export function UnrankStepper(props: {
           <div class="stepper-stage">
             <p class="stepper-pool">
               Remaining pool:{' '}
-              <Index each={[...current.poolBefore]}>
+              <For each={[...current.poolBefore]} keyed={false}>
                 {(value, i) => (
                   <span
-                    class="stepper-card"
-                    classList={{ selected: i === current.digit }}
+                    class={['stepper-card', { selected: i === current.digit }]}
                   >
                     {label(value())}
                   </span>
                 )}
-              </Index>
+              </For>
             </p>
             <p class="stepper-math">
               digit {current.digit} × {current.blockSize.toString()}! ={' '}

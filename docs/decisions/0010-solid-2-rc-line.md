@@ -1,6 +1,6 @@
 # 0010: Track the Solid 2.0 release-candidate line
 
-- Status: proposed
+- Status: accepted
 - Date: 2026-08-30
 
 ## Context
@@ -25,8 +25,9 @@ Upgrade to the Solid 2.0 RC line now and track RC revisions until GA. While pre-
 ## Evidence
 
 - npm dist-tags inspected 2026-08-30: `solid-js next = 2.0.0-rc.4`, `@solidjs/router next = 2.0.0-next.19`, `vite-plugin-solid next = 3.0.0-next.27`, `@solidjs/testing-library next = 1.0.0-beta.2`.
+- `vite-plugin-solid` was renamed to `@solidjs/vite-plugin` by its authors; the old name's 3.0.0-next.27 is final and only re-exports the new package. RC tracking therefore pins `@solidjs/vite-plugin` (`3.0.0-next.35` at adoption).
 - Upgrade verification evidence: recorded in the plan.
 
 ## Related Material
 
-- Plan: `docs/plans/active/2026-08-30-solid-2-rc-upgrade.md`.
+- Plan: `docs/plans/completed/2026-08-30-solid-2-rc-upgrade.md`.
