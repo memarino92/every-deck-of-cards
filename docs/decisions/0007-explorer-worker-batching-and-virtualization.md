@@ -56,3 +56,4 @@ To be recorded in the explorer plan: worker round-trip tests, virtualization anc
 - [Sequential card IDs](0005-assign-card-ids-in-canonical-order.md)
 - [Explorer plan](../plans/completed/2026-08-29-explorer.md)
 - [Architecture](../architecture.md)
+- [0009: Explorer as page-scroll feed with virtual-position navigation](0009-explorer-page-scroll-virtual-position.md) — supersedes this record's choice of scroll container (nested pane) and recenter trigger; the worker batching, bigint window math, and deck-number addressing above still stand.
