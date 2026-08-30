@@ -70,6 +70,50 @@ test.describe('explorer end of space', () => {
       .toBe(LAST_DECK_PLAIN)
   })
 
+  test('the comma-grouped last deck number pastes into the input', async ({
+    page,
+  }) => {
+    await page.goto('/explore')
+
+    // The site displays deck numbers comma-grouped; pasting that string back
+    // into the jump box must work.
+    const input = page.locator('.jump input')
+    await input.fill(LAST_DECK)
+    await page.locator('.jump button[type="submit"]').click()
+
+    await expect
+      .poll(async () => (await maxVisibleDeck(page)).toString())
+      .toBe(LAST_DECK_PLAIN)
+  })
+
+  test('the go-to-end button fills the input and shows the last deck', async ({
+    page,
+  }) => {
+    await page.goto('/explore')
+
+    await page.locator('.jump .end-button').click()
+
+    // The button surfaces the last deck number in the input…
+    await expect(page.locator('.jump input')).toHaveValue(LAST_DECK_PLAIN)
+
+    // …and scrolls it into view.
+    await expect
+      .poll(async () => (await maxVisibleDeck(page)).toString())
+      .toBe(LAST_DECK_PLAIN)
+  })
+
+  test('the go-to-start button returns to deck 1', async ({ page }) => {
+    // Start somewhere deep in the space so the trip back is observable.
+    await page.goto(`/explore?deck=${NEAR_END_INDEX}`)
+
+    await page.locator('.jump .start-button').click()
+
+    await expect(page.locator('.jump input')).toHaveValue('1')
+    await expect
+      .poll(async () => (await minVisibleDeck(page)).toString())
+      .toBe('1')
+  })
+
   test('reaches the last deck scrolling down, and escapes scrolling up', async ({
     page,
   }) => {

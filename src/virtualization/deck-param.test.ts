@@ -33,6 +33,29 @@ describe('parseDeckNumberParam', () => {
     expect(parseDeckNumberParam('1.5')).toBe(0n)
     expect(parseDeckNumberParam('1e3')).toBe(0n)
     expect(parseDeckNumberParam('')).toBe(0n)
-    expect(parseDeckNumberParam('12 34')).toBe(0n)
+  })
+
+  it('accepts common thousands separators', () => {
+    // Every deck number the site displays is comma-grouped, and visitors
+    // paste those strings back into the jump box.
+    expect(parseDeckNumberParam('1,234,567')).toBe(1234566n)
+    expect(parseDeckNumberParam('1 234 567')).toBe(1234566n)
+    expect(parseDeckNumberParam('1 234 567')).toBe(1234566n)
+    expect(parseDeckNumberParam('1 234 567')).toBe(1234566n)
+    expect(parseDeckNumberParam('1_234_567')).toBe(1234566n)
+    expect(parseDeckNumberParam("1'234'567")).toBe(1234566n)
+
+    // The formatted last deck number round-trips to the last index.
+    expect(
+      parseDeckNumberParam(
+        '80,658,175,170,943,878,571,660,636,856,403,766,975,289,505,440,883,277,824,000,000,000,000',
+      ),
+    ).toBe(DECK_COUNT - 1n)
+  })
+
+  it('still rejects input that is not digits once separators are stripped', () => {
+    expect(parseDeckNumberParam(',,,')).toBe(0n)
+    expect(parseDeckNumberParam('1,2,3,')).toBe(122n)
+    expect(parseDeckNumberParam('12a,345')).toBe(0n)
   })
 })

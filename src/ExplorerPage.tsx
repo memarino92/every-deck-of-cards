@@ -11,8 +11,10 @@ import {
 
 import { CARD_COUNT, type CardId } from './domain/cards.ts'
 import {
+  FIRST_DECK_NUMBER,
   LAST_DECK_NUMBER,
   permutationIndexToPublicDeckNumber,
+  publicDeckNumberToIndex,
 } from './domain/deck-number.ts'
 import { cryptoEntropy, randomPermutationIndex } from './domain/random.ts'
 import { PlayingCard } from './PlayingCard.tsx'
@@ -189,6 +191,17 @@ export function ExplorerPage() {
     navigateTo(randomPermutationIndex(cryptoEntropy))
   }
 
+  // Jump straight to the last deck: one of the first things a visitor wants,
+  // and a 68-digit number nobody should have to type.
+  function goToEnd(): void {
+    navigateTo(publicDeckNumberToIndex(LAST_DECK_NUMBER))
+  }
+
+  // Back to deck 1 without typing it out.
+  function goToStart(): void {
+    navigateTo(publicDeckNumberToIndex(FIRST_DECK_NUMBER))
+  }
+
   onMount(() => {
     setSource(
       new DeckBatchSource(
@@ -234,6 +247,12 @@ export function ExplorerPage() {
           <button type="submit">Jump</button>
           <button type="button" class="random-button" onClick={randomize}>
             Random
+          </button>
+          <button type="button" class="end-button" onClick={goToEnd}>
+            Go to end
+          </button>
+          <button type="button" class="start-button" onClick={goToStart}>
+            Go to start
           </button>
         </form>
 
