@@ -59,4 +59,16 @@ pnpm test
 pnpm build
 ```
 
+When a change touches scrolling, virtualization, or other behavior that is
+emergent between the browser and the app, also run the Playwright end-to-end
+suite (one-time browser setup: `pnpm exec playwright install chromium`):
+
+```sh
+pnpm test:e2e
+```
+
+The e2e suite is the oracle for emergent browser behavior; do not try to
+verify that behavior with pure-TypeScript scroll simulations, which cannot
+model real `scrollTop` clamping and event cadence.
+
 On Windows where PowerShell blocks package-manager shims, use `pnpm.cmd`.

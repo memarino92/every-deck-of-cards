@@ -21,6 +21,14 @@ pnpm test
 pnpm build
 ```
 
+If your change touches scrolling, virtualization, or other behavior that is
+emergent between the browser and the app, also run the end-to-end suite
+(install the browser first with `pnpm exec playwright install chromium`):
+
+```sh
+pnpm test:e2e
+```
+
 Behavior changes require tests. Performance claims require a reproducible benchmark and documented methodology. Architecture changes require an updated or new decision record.
 
 Substantial work must have an execution plan in `docs/plans/active/`. Update it as work proceeds and move it to `docs/plans/completed/` after verification.
