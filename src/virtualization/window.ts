@@ -14,10 +14,12 @@ import { DECK_COUNT } from '../domain/deck-number.ts'
 export const LAST_INDEX = DECK_COUNT - 1n
 
 export interface WindowGeometry {
-  /** Total rows kept in the DOM, including overscan. */
+  /**
+   * Total rows kept in the DOM. Larger than the visible area so there is
+   * margin to scroll into before the window recenters, but small enough to
+   * bound DOM weight (each row renders 52 cards).
+   */
   readonly physicalRowCount: number
-  /** Rows of overscan above and below the visible area. */
-  readonly overscan: number
 }
 
 function assertPositiveInteger(value: number, name: string): void {
@@ -26,20 +28,10 @@ function assertPositiveInteger(value: number, name: string): void {
   }
 }
 
-export function createWindowGeometry(
-  physicalRowCount: number,
-  overscan: number,
-): WindowGeometry {
+export function createWindowGeometry(physicalRowCount: number): WindowGeometry {
   assertPositiveInteger(physicalRowCount, 'Physical row count')
-  assertPositiveInteger(overscan, 'Overscan')
 
-  if (overscan * 2 >= physicalRowCount) {
-    throw new RangeError(
-      'Overscan must leave room for visible rows within the window',
-    )
-  }
-
-  return Object.freeze({ physicalRowCount, overscan })
+  return Object.freeze({ physicalRowCount })
 }
 
 function assertIndex(index: bigint): void {
@@ -49,34 +41,50 @@ function assertIndex(index: bigint): void {
 }
 
 /**
- * Clamp a desired anchor so the full physical window stays within
- * `0..LAST_INDEX`. Anchoring near the end pulls the anchor back so the
- * window's last row never passes the final deck.
+ * Clamp a desired anchor into the valid deck range `0..LAST_INDEX`. The
+ * anchor names a logical deck (the one the viewport is centered on), so it is
+ * allowed to reach the very last deck; keeping the window on-screen is
+ * `windowStart`'s job, not the anchor's.
  */
-export function clampAnchor(desired: bigint, geometry: WindowGeometry): bigint {
+export function clampAnchor(desired: bigint): bigint {
   if (typeof desired !== 'bigint') {
     throw new RangeError('Anchor must be a bigint')
   }
 
-  const windowSpan = BigInt(geometry.physicalRowCount - 1)
-  const maxAnchor = LAST_INDEX - windowSpan
   const lowerBounded = desired < 0n ? 0n : desired
 
-  return lowerBounded > maxAnchor ? maxAnchor : lowerBounded
+  return lowerBounded > LAST_INDEX ? LAST_INDEX : lowerBounded
 }
 
 /**
  * The logical index of the first row of the physical window, given an anchor.
- * The anchor is the logical index the window is centered on, so the window
- * starts half a window before it, clamped to the valid range.
+ * The window normally starts half a window before the anchor so the anchor
+ * sits centered with scroll margin on both sides. Both ends pin the window to
+ * the boundary instead of over-shooting it: at the start the window clamps to
+ * row 0 (anchor rides partway in), and at the end the window clamps to
+ * `maxStart`
+ * so the final window covers exactly the last `physicalRowCount` decks. The
+ * end clamp is what makes the last deck reachable — without it the window
+ * would stop half a window short of the boundary.
  */
 export function windowStart(anchor: bigint, geometry: WindowGeometry): bigint {
   assertIndex(anchor)
 
   const halfWindow = BigInt(Math.floor(geometry.physicalRowCount / 2))
+  const windowSpan = BigInt(geometry.physicalRowCount - 1)
+  const maxStart = LAST_INDEX - windowSpan
+
+  // Center the window on the anchor, then clamp into [0, maxStart]. The lower
+  // clamp pins the first window to row 0; the upper clamp pins the final
+  // window so its last row is exactly the last deck, making the end of the
+  // space reachable.
   const desired = anchor - halfWindow
 
-  return clampAnchor(desired, geometry)
+  if (desired < 0n) {
+    return 0n
+  }
+
+  return desired > maxStart ? maxStart : desired
 }
 
 /**
@@ -102,11 +110,19 @@ export function logicalIndexAt(
  * whether the window should recenter and, if so, the new anchor.
  *
  * `scrollRow` is the fractional row at the top of the viewport, expressed in
- * window coordinates (scrollTop / rowHeight). The window is `physicalRowCount`
- * rows tall, so its center row sits at `physicalRowCount / 2`. When the
- * viewport top drifts more than `overscan` rows from that center, the anchor
- * moves to the logical row now under the viewport's center; otherwise the
- * anchor is unchanged.
+ * window coordinates (scrollTop / rowHeight). The anchor follows the logical
+ * row under the viewport's center on every scroll event, so the window always
+ * tracks the viewport instead of lagging behind a deadband.
+ *
+ * A deadband (only recentering once the viewport drifts far enough from the
+ * window center) was tried and rejected: near the content boundary the
+ * browser clamps `scrollTop`, which wraps `scrollRow` back toward the window
+ * center
+ * before the drift can exceed the deadband. The window then re-anchors by
+ * only a few rows per scroll gesture and the explorer crawls toward — but
+ * never reaches — the end of the space. Recentering every event keeps the
+ * window glued to the viewport; `windowStart`'s boundary clamps keep the
+ * final window pinned so the last deck is reachable.
  *
  * The viewport's own height is not modeled: we treat the viewport's center as
  * sitting `physicalRowCount / 4` rows below its top, a stable midpoint for a
@@ -124,17 +140,10 @@ export function recenteredAnchor(
     throw new RangeError('Scroll row must be a non-negative finite number')
   }
 
-  const center = geometry.physicalRowCount / 2
   const viewportCenterOffset = geometry.physicalRowCount / 4
-  const drift = scrollRow - center
-
-  if (Math.abs(drift) <= geometry.overscan) {
-    return anchor
-  }
-
   const rowAtViewportCenter = Math.round(scrollRow + viewportCenterOffset)
   const start = windowStart(anchor, geometry)
   const desired = start + BigInt(rowAtViewportCenter)
 
-  return clampAnchor(desired, geometry)
+  return clampAnchor(desired)
 }

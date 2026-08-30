@@ -29,11 +29,10 @@ import type { BatchResponse } from './worker/explorer.worker.ts'
 
 /** Pixel height of one deck row; scroll math divides scrollTop by this. */
 const ROW_HEIGHT = 148
-/** Rendered rows including overscan; each row fans 52 cards, so keep small. */
+/** Rendered rows; each row fans 52 cards, so keep the window small. */
 const PHYSICAL_ROWS = 24
-const OVERSCAN = 6
 
-const geometry = createWindowGeometry(PHYSICAL_ROWS, OVERSCAN)
+const geometry = createWindowGeometry(PHYSICAL_ROWS)
 
 // Superseded or terminated requests are expected during fast scroll.
 function ignoreRejection(): void {}
@@ -47,8 +46,8 @@ interface DeckRow {
  * The anchor is the deck under the viewport's top edge. The physical window
  * holds `PHYSICAL_ROWS` rows with `windowStart(anchor)` the first rendered
  * row; the anchor sits `floor(PHYSICAL_ROWS / 2)` rows into the window so
- * there is overscan on both sides. Scrolling moves the viewport top away from
- * the anchor; past `OVERSCAN` rows of drift the anchor recenters.
+ * there is scroll margin on both sides. On each scroll event the window
+ * recenters onto the deck under the viewport's center.
  */
 export function ExplorerPage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -169,7 +168,7 @@ export function ExplorerPage() {
   // Navigate to a deck: anchor it, sync the URL, and scroll it to the top.
   function navigateTo(deckIndex: bigint): void {
     const number = permutationIndexToPublicDeckNumber(deckIndex)
-    const clamped = clampAnchor(deckIndex, geometry)
+    const clamped = clampAnchor(deckIndex)
 
     setJumpValue(number.toString())
     setSearchParams({ deck: number.toString() })
