@@ -2,6 +2,7 @@ import { render, screen, waitFor } from '@solidjs/testing-library'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 
 import { CARD_COUNT } from '@/domain/cards.ts'
+import { stripRange, createPosition } from '@/virtualization/position.ts'
 import { unrankBatch } from '@/worker/batch.ts'
 import type { BatchRequest, BatchResponse } from '@/worker/explorer.worker.ts'
 
@@ -14,7 +15,7 @@ import { ExplorerPage } from '@/ExplorerPage.tsx'
 
 /**
  * Regression test for the initial-load stall: the explorer must issue a worker
- * request on mount and populate rows, even though the anchor does not change
+ * request on mount and populate rows, even though the position does not change
  * (the requested deck is already current). Previously the request effect was
  * keyed only on the anchor, so the first request never fired until the visitor
  * clicked Random or Jump.
@@ -58,8 +59,22 @@ function renderExplorer(): void {
   render(() => <Router>{(props) => props.children}</Router>)
 }
 
+// The feed measures itself; jsdom reports zero heights, so stub a viewport
+// tall enough for several rows. The expected strip comes from the same pure
+// math the component uses.
+const STUBBED_FEED_HEIGHT = 800
+const ROW_HEIGHT = 148
+const OVERSCAN_ROWS = 8
+const EXPECTED_STRIP = stripRange(
+  createPosition(0n, 0),
+  STUBBED_FEED_HEIGHT,
+  ROW_HEIGHT,
+  OVERSCAN_ROWS,
+)
+
 describe('ExplorerPage initial load', () => {
   let fakeWorker: FakeWorker
+  let clientHeightSpy: ReturnType<typeof vi.spyOn>
 
   beforeEach(() => {
     fakeWorker = new FakeWorker()
@@ -68,22 +83,27 @@ describe('ExplorerPage initial load', () => {
     vi.stubGlobal('Worker', function (this: unknown) {
       return workerRef
     } as unknown as typeof Worker)
+    clientHeightSpy = vi
+      .spyOn(HTMLElement.prototype, 'clientHeight', 'get')
+      .mockReturnValue(STUBBED_FEED_HEIGHT)
   })
 
   afterEach(() => {
     cleanup()
+    clientHeightSpy.mockRestore()
     vi.unstubAllGlobals()
   })
 
-  it('requests a batch on mount without requiring an anchor change', async () => {
+  it('requests a batch on mount without requiring a position change', async () => {
     renderExplorer()
 
     await waitFor(() => {
       expect(fakeWorker.requests.length).toBeGreaterThan(0)
     })
 
-    // The first request covers the window starting at deck 1 (index 0).
+    // The first request covers the strip starting at deck 1 (index 0).
     expect(fakeWorker.requests[0]?.startIndex).toBe(0n)
+    expect(fakeWorker.requests[0]?.count).toBe(EXPECTED_STRIP.count)
   })
 
   it('renders card rows after the initial batch resolves', async () => {
@@ -99,9 +119,12 @@ describe('ExplorerPage initial load', () => {
     const faces = await screen.findAllByLabelText('A of spades')
     expect(faces.length).toBeGreaterThan(0)
 
-    // The window is full: 24 rows each contribute 52 card faces.
+    // The strip is full: every rendered row fans 52 cards.
+    expect(document.querySelectorAll('.deck-row').length).toBe(
+      EXPECTED_STRIP.count,
+    )
     expect(document.querySelectorAll('.playing-card').length).toBe(
-      24 * CARD_COUNT,
+      EXPECTED_STRIP.count * CARD_COUNT,
     )
   })
 })

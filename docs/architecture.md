@@ -8,7 +8,7 @@ Address and render any of the `52!` orderings of a standard deck without enumera
 
 - `domain`: pure TypeScript for cards, factorials, permutation ranking, curated decks, randomness, and magnitude calculations
 - `worker`: typed messages, cancellation, batching, and transferable card buffers
-- `virtualization`: maps a bounded physical scroll window to `bigint` logical indices
+- `virtualization`: holds the explorer's scroll position as a `bigint` virtual position and maps it to a bounded rendered strip
 - `ui`: Solid components, navigation, controls, documentation, and talk mode
 - `deployment`: immutable static assets served by Cloudflare without an application Worker
 
@@ -22,7 +22,7 @@ All indices use `bigint`. JavaScript `number` cannot exactly represent this rang
 
 ## Rendering
 
-The browser cannot create a scroll area with `52!` rows. A bounded fixed-height physical window will be recentered around a logical `bigint` anchor. Only visible rows and small overscan batches will exist in memory or the DOM.
+The browser cannot create a scroll area with `52!` rows. The explorer's scroll position is application state: a `bigint` virtual position (the deck under the viewport's top edge plus a sub-row pixel offset) that wheel, keyboard, touch, and scrollbar-rail input advance directly. A bounded strip of rows — visible plus small overscan — follows the position, and a custom scrollbar rail maps percent-of-space back to an exact integer position. Only the strip's rows exist in memory or the DOM; deck numbers render synchronously from the position while card faces load asynchronously from the worker.
 
 ## Computation
 

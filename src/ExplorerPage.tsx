@@ -19,167 +19,282 @@ import { cryptoEntropy, randomPermutationIndex } from './domain/random.ts'
 import { PlayingCard } from './PlayingCard.tsx'
 import { parseDeckNumberParam } from './virtualization/deck-param.ts'
 import {
-  clampAnchor,
-  createWindowGeometry,
-  logicalIndexAt,
-  recenteredAnchor,
-  windowStart,
-} from './virtualization/window.ts'
+  advancePosition,
+  clampPosition,
+  createPosition,
+  easeInOutCubic,
+  fractionAtPosition,
+  interpolatePosition,
+  LAST_INDEX,
+  positionAtFraction,
+  stripRange,
+  visibleRowCount,
+  type FeedPosition,
+} from './virtualization/position.ts'
 import { DeckBatchSource } from './worker/DeckBatchSource.ts'
 import type { BatchResponse } from './worker/explorer.worker.ts'
 
-/** Pixel height of one deck row; scroll math divides scrollTop by this. */
+/** Pixel height of one deck row; the position math divides input by this. */
 const ROW_HEIGHT = 148
-/** Rendered rows; each row fans 52 cards, so keep the window small. */
-const PHYSICAL_ROWS = 24
+/** Extra rows rendered beyond each viewport edge so fast scrolls stay covered. */
+const OVERSCAN_ROWS = 8
+/** Duration of animated jump navigation; direct input is always instant. */
+const JUMP_DURATION_MS = 300
 
-const geometry = createWindowGeometry(PHYSICAL_ROWS)
+const WHEEL_DELTA_LINE = 1
+const WHEEL_DELTA_PAGE = 2
 
 // Superseded or terminated requests are expected during fast scroll.
 function ignoreRejection(): void {}
 
-interface DeckRow {
+/**
+ * Reduced-motion is the default-safe answer: when `matchMedia` is unavailable
+ * (test environments, very old browsers) jumps land instantly rather than
+ * animating.
+ */
+function prefersReducedMotion(): boolean {
+  return (
+    typeof globalThis.matchMedia !== 'function' ||
+    globalThis.matchMedia('(prefers-reduced-motion: reduce)').matches
+  )
+}
+
+interface DeckRowProps {
   readonly index: bigint
-  readonly cards: Uint8Array | undefined
+  readonly cards: () => Uint8Array | undefined
 }
 
 /**
- * The anchor is the deck under the viewport's top edge. The physical window
- * holds `PHYSICAL_ROWS` rows with `windowStart(anchor)` the first rendered
- * row; the anchor sits `floor(PHYSICAL_ROWS / 2)` rows into the window so
- * there is scroll margin on both sides. On each scroll event the window
- * recenters onto the deck under the viewport's center.
+ * One deck row. The deck number renders synchronously from the row's index —
+ * the position never waits on the worker — while the card fan fills in when
+ * its batch lands.
+ */
+function DeckRow(props: DeckRowProps) {
+  const number = () => permutationIndexToPublicDeckNumber(props.index)
+  const cardList = createMemo(() => {
+    const cards = props.cards()
+    return cards === undefined ? undefined : Array.from(cards)
+  })
+
+  return (
+    <div class="deck-row" style={{ height: `${ROW_HEIGHT}px` }}>
+      <span class="deck-number">{number().toLocaleString('en-US')}</span>
+      <div class="deck-fan">
+        {cardList() !== undefined ? (
+          <For each={cardList()}>
+            {(id, position) => (
+              <div
+                class="deck-card"
+                style={{
+                  // Deal right-to-left: the first card (face of the
+                  // deck) is rightmost, so each card is covered on
+                  // its right and you read every top-left upright
+                  // pip as you scan left to right.
+                  '--position': position(),
+                  // The face card (position 0) sits on top.
+                  'z-index': 52 - position(),
+                }}
+              >
+                <PlayingCard id={id as CardId} />
+              </div>
+            )}
+          </For>
+        ) : (
+          <span class="deck-loading">Shuffling…</span>
+        )}
+      </div>
+    </div>
+  )
+}
+
+/**
+ * The explorer holds its scroll position as application state (decision
+ * 0009): `position` names the deck under the viewport's top edge plus a
+ * sub-row pixel offset. Wheel, keyboard, touch-drag, and the custom
+ * scrollbar rail all advance the position directly, so input never waits on
+ * the worker; only card faces load asynchronously. Programmatic navigation
+ * (Jump, Random, Go to start/end) animates the position with
+ * `requestAnimationFrame` and always lands exactly on the requested deck.
  */
 export function ExplorerPage() {
   const [searchParams, setSearchParams] = useSearchParams()
-  // Read once at mount: the requested deck seeds the anchor; later `deck`
+  // Read once at mount: the requested deck seeds the position; later `deck`
   // param changes come from this page's own navigations, not back at it.
   const requestedIndex = untrack(() => {
     const raw = searchParams['deck']
     return parseDeckNumberParam(Array.isArray(raw) ? raw[0] : raw)
   })
 
-  // Anchor the requested deck, then place the viewport so that deck sits at
-  // the top. windowStart() clamps near deck 1, so the offset from the window
-  // start to the deck is the source of truth for where to scroll to.
-  const [anchor, setAnchor] = createSignal<bigint>(requestedIndex)
-
-  const [batches, setBatches] = createSignal<ReadonlyMap<number, Uint8Array>>(
+  const [position, setPosition] = createSignal<FeedPosition>(
+    createPosition(requestedIndex, 0),
+  )
+  const [viewportHeight, setViewportHeight] = createSignal(0)
+  const [batches, setBatches] = createSignal<ReadonlyMap<bigint, Uint8Array>>(
     new Map(),
   )
   const [jumpValue, setJumpValue] = createSignal(
     permutationIndexToPublicDeckNumber(requestedIndex).toString(),
   )
 
-  let scrollEl: HTMLDivElement | undefined
+  let feedEl: HTMLElement | undefined
+  let railEl: HTMLDivElement | undefined
+  let thumbEl: HTMLDivElement | undefined
 
-  const assignScrollEl = (element: HTMLDivElement): void => {
-    scrollEl = element
+  const assignFeedEl = (element: HTMLElement): void => {
+    feedEl = element
+  }
+  const assignRailEl = (element: HTMLDivElement): void => {
+    railEl = element
+  }
+  const assignThumbEl = (element: HTMLDivElement): void => {
+    thumbEl = element
   }
 
   // The worker source is a signal so the request effect re-runs when the
-  // worker is created on mount — the initial window must not wait for an
-  // anchor change that never comes when the requested deck is already current.
+  // worker is created on mount — the initial strip must not wait for a
+  // position change that never comes when the requested deck is already
+  // current.
   const [source, setSource] = createSignal<DeckBatchSource | undefined>(
     undefined,
   )
 
-  // The scrollTop (in px) that puts `deckIndex` at the top of the viewport.
-  function scrollTopFor(deckIndex: bigint): number {
-    return Number(deckIndex - windowStart(anchor(), geometry)) * ROW_HEIGHT
-  }
+  const visibleRows = createMemo(() =>
+    visibleRowCount(viewportHeight(), ROW_HEIGHT),
+  )
+  const strip = createMemo(() =>
+    stripRange(position(), viewportHeight(), ROW_HEIGHT, OVERSCAN_ROWS),
+  )
+  // Primitive projections of the strip: bigint/number identity only changes
+  // when the strip actually moves, so sub-row scrolls (offsetPx changes) do
+  // not retrigger the request effect below.
+  const stripStart = createMemo(() => strip().start)
+  const stripCount = createMemo(() => strip().count)
+  const rowIndices = createMemo<readonly bigint[]>(() => {
+    const { start, count } = strip()
+    const indices: bigint[] = []
 
-  const rows = createMemo<readonly DeckRow[]>(() => {
-    const result: DeckRow[] = []
-
-    for (let physical = 0; physical < PHYSICAL_ROWS; physical += 1) {
-      result.push({
-        index: logicalIndexAt(anchor(), physical, geometry),
-        cards: batches().get(physical),
-      })
+    for (let row = 0; row < count; row += 1) {
+      indices.push(start + BigInt(row))
     }
 
-    return result
+    return indices
   })
+  const thumbTopPercent = createMemo(
+    () => fractionAtPosition(position(), visibleRows()) * 100,
+  )
 
-  // Fold a worker response into the buffer for the current window. A response
-  // may arrive after the window has shifted, so rows are keyed by the window
-  // position in effect when it lands, not when it was requested.
+  // Fold a worker response into the card cache. Entries are keyed by deck
+  // index so rows survive strip shifts; rows outside the current strip are
+  // evicted to keep the cache bounded.
   function handleResponse(response: BatchResponse): void {
-    const nextStart = windowStart(anchor(), geometry)
-    const next = new Map<number, Uint8Array>()
+    const { start, count } = strip()
+    const end = start + BigInt(count)
 
-    for (let deck = 0; deck < response.count; deck += 1) {
-      const index = response.startIndex + BigInt(deck)
-      const physical = Number(index - nextStart)
+    setBatches((previous) => {
+      const next = new Map(previous)
 
-      if (physical >= 0 && physical < PHYSICAL_ROWS) {
-        next.set(
-          physical,
-          response.cards.slice(deck * CARD_COUNT, (deck + 1) * CARD_COUNT),
-        )
+      for (const key of next.keys()) {
+        if (key < start || key >= end) {
+          next.delete(key)
+        }
       }
-    }
 
-    setBatches(next)
+      for (let deck = 0; deck < response.count; deck += 1) {
+        const index = response.startIndex + BigInt(deck)
+
+        if (index >= start && index < end) {
+          next.set(
+            index,
+            response.cards.slice(deck * CARD_COUNT, (deck + 1) * CARD_COUNT),
+          )
+        }
+      }
+
+      return next
+    })
   }
 
-  // The single request path: fetch the window whenever the anchor changes or
-  // the worker becomes available. Keying on both fixes the initial-load stall
-  // where the anchor was already current, so no change ever fired the effect.
-  // Stale responses are dropped by the source sequence.
+  // The single request path: fetch the strip whenever it moves or the worker
+  // becomes available. Keying on both fixes the initial-load stall where the
+  // position was already current, so no change ever fired the effect. Stale
+  // responses are dropped by the source sequence.
   createEffect(
-    () => [anchor(), source()] as const,
-    ([currentAnchor, worker]) => {
+    () => [stripStart(), stripCount(), source()] as const,
+    ([start, count, worker]) => {
       if (worker === undefined) {
         return
       }
 
-      worker
-        .request(windowStart(currentAnchor, geometry), PHYSICAL_ROWS)
-        .then(handleResponse)
-        .catch(ignoreRejection)
+      worker.request(start, count).then(handleResponse).catch(ignoreRejection)
     },
   )
 
-  function handleScroll(): void {
-    if (scrollEl === undefined) {
-      return
+  // --- Animated navigation ------------------------------------------------
+
+  let animationFrame: number | undefined
+  // Exposed as `data-animating` on the feed: observable animation state, so
+  // tests (and any future chrome) can tell a running glide from a settled
+  // feed without timing guesses.
+  const [animating, setAnimating] = createSignal(false)
+
+  function cancelAnimation(): void {
+    if (animationFrame !== undefined) {
+      cancelAnimationFrame(animationFrame)
+      animationFrame = undefined
+      setAnimating(false)
     }
-
-    const scrollRow = scrollEl.scrollTop / ROW_HEIGHT
-    const currentAnchor = anchor()
-    const next = recenteredAnchor(currentAnchor, scrollRow, geometry)
-
-    if (next === currentAnchor) {
-      return
-    }
-
-    const currentStart = windowStart(currentAnchor, geometry)
-
-    setAnchor(next)
-
-    // Keep the same logical row under the viewport after re-anchoring: shift
-    // the scroll position by how far the window's first row moved.
-    const nextStart = windowStart(next, geometry)
-    const startShift = Number(nextStart - currentStart)
-
-    scrollEl.scrollTop = scrollEl.scrollTop - startShift * ROW_HEIGHT
   }
 
-  // Navigate to a deck: anchor it, sync the URL, and scroll it to the top.
+  /**
+   * Animate the position to `target` over JUMP_DURATION_MS, landing exactly
+   * on it. Reduced motion (or a missing rAF) jumps instantly. Any new input
+   * — wheel, rail, keyboard, touch, or another navigation — cancels a running
+   * animation deterministically.
+   */
+  function animateTo(target: FeedPosition): void {
+    cancelAnimation()
+
+    if (prefersReducedMotion() || typeof requestAnimationFrame !== 'function') {
+      setPosition(target)
+      return
+    }
+
+    const from = position()
+    const start = performance.now()
+    setAnimating(true)
+
+    const step = (now: number): void => {
+      const t = Math.min(1, (now - start) / JUMP_DURATION_MS)
+
+      if (t >= 1) {
+        animationFrame = undefined
+        setAnimating(false)
+        setPosition(target)
+        return
+      }
+
+      setPosition(
+        interpolatePosition(
+          from,
+          target,
+          easeInOutCubic(t),
+          ROW_HEIGHT,
+          visibleRows(),
+        ),
+      )
+      animationFrame = requestAnimationFrame(step)
+    }
+
+    animationFrame = requestAnimationFrame(step)
+  }
+
+  // Navigate to a deck: sync the URL and input, then glide the position.
   function navigateTo(deckIndex: bigint): void {
     const number = permutationIndexToPublicDeckNumber(deckIndex)
-    const clamped = clampAnchor(deckIndex)
 
     setJumpValue(number.toString())
     setSearchParams({ deck: number.toString() })
-    setAnchor(clamped)
-
-    if (scrollEl !== undefined) {
-      scrollEl.scrollTop =
-        Number(clamped - windowStart(clamped, geometry)) * ROW_HEIGHT
-    }
+    animateTo(clampPosition(createPosition(deckIndex, 0), visibleRows()))
   }
 
   function jump(): void {
@@ -202,6 +317,185 @@ export function ExplorerPage() {
     navigateTo(publicDeckNumberToIndex(FIRST_DECK_NUMBER))
   }
 
+  // --- Direct input: wheel, keyboard, touch drag, rail ---------------------
+
+  // The feed is the page: wheel input anywhere on it advances the position.
+  // Attached natively with passive:false so the browser's own scrolling
+  // (the page has none while the explorer is mounted) is always suppressed.
+  function handleWheel(event: WheelEvent): void {
+    event.preventDefault()
+    cancelAnimation()
+
+    const scale =
+      event.deltaMode === WHEEL_DELTA_LINE
+        ? ROW_HEIGHT
+        : event.deltaMode === WHEEL_DELTA_PAGE
+          ? Math.max(viewportHeight(), ROW_HEIGHT)
+          : 1
+
+    setPosition((current) =>
+      advancePosition(current, event.deltaY * scale, ROW_HEIGHT, visibleRows()),
+    )
+  }
+
+  function handleKeyDown(event: KeyboardEvent): void {
+    const advanceBy: Partial<Record<string, number>> = {
+      ArrowDown: ROW_HEIGHT,
+      ArrowUp: -ROW_HEIGHT,
+      PageDown: Math.max(viewportHeight(), ROW_HEIGHT),
+      PageUp: -Math.max(viewportHeight(), ROW_HEIGHT),
+    }
+
+    if (event.key === 'Home' || event.key === 'End') {
+      event.preventDefault()
+      cancelAnimation()
+      const top =
+        event.key === 'Home'
+          ? createPosition(0n, 0)
+          : clampPosition(createPosition(LAST_INDEX, 0), visibleRows())
+      setPosition(top)
+      return
+    }
+
+    const delta = advanceBy[event.key]
+
+    if (delta === undefined) {
+      return
+    }
+
+    event.preventDefault()
+    cancelAnimation()
+    setPosition((current) =>
+      advancePosition(current, delta, ROW_HEIGHT, visibleRows()),
+    )
+  }
+
+  // Touch dragging the feed pans the position one-to-one. Mouse drags are
+  // left alone so text selection and card hover keep working.
+  let touchDragY: number | undefined
+
+  function handleFeedPointerDown(event: PointerEvent): void {
+    if (event.pointerType !== 'touch' || feedEl === undefined) {
+      return
+    }
+
+    cancelAnimation()
+    touchDragY = event.clientY
+    feedEl.setPointerCapture(event.pointerId)
+  }
+
+  function handleFeedPointerMove(event: PointerEvent): void {
+    if (touchDragY === undefined || event.pointerType !== 'touch') {
+      return
+    }
+
+    const delta = touchDragY - event.clientY
+    touchDragY = event.clientY
+    setPosition((current) =>
+      advancePosition(current, delta, ROW_HEIGHT, visibleRows()),
+    )
+  }
+
+  function endTouchDrag(): void {
+    touchDragY = undefined
+  }
+
+  // The rail maps percent-of-space to an exact position (decision 0009). The
+  // thumb travels `rail height - thumb height`; grabbing the thumb keeps the
+  // pointer's offset within it, and pressing the bare rail teleports the
+  // thumb's center to the pointer. Either way the extremes clamp, so cranking
+  // to (or past) an end lands exactly on the first or last scrollable deck.
+  let railDragging = false
+  let railGrabOffset = 0
+
+  function railFraction(clientY: number): number {
+    if (railEl === undefined || thumbEl === undefined) {
+      return 0
+    }
+
+    const railRect = railEl.getBoundingClientRect()
+    const thumbHeight = thumbEl.getBoundingClientRect().height
+    const travel = Math.max(1, railRect.height - thumbHeight)
+    const fraction = (clientY - railRect.top - railGrabOffset) / travel
+
+    return fraction < 0 ? 0 : fraction > 1 ? 1 : fraction
+  }
+
+  function handleRailPointerDown(event: PointerEvent): void {
+    if (railEl === undefined || thumbEl === undefined) {
+      return
+    }
+
+    event.preventDefault()
+    cancelAnimation()
+    railDragging = true
+    railEl.setPointerCapture(event.pointerId)
+
+    railGrabOffset =
+      event.target === thumbEl
+        ? event.clientY - thumbEl.getBoundingClientRect().top
+        : thumbEl.getBoundingClientRect().height / 2
+
+    setPosition(positionAtFraction(railFraction(event.clientY), visibleRows()))
+  }
+
+  function handleRailPointerMove(event: PointerEvent): void {
+    if (!railDragging) {
+      return
+    }
+
+    setPosition(positionAtFraction(railFraction(event.clientY), visibleRows()))
+  }
+
+  function endRailDrag(): void {
+    railDragging = false
+  }
+
+  // --- Setup ---------------------------------------------------------------
+
+  // Runs once when the component settles (Solid 2's mount-with-cleanup hook;
+  // the returned function fires on disposal). The feed is a full-viewport
+  // scroller that *is* the page: suppress the document's own scrolling while
+  // the explorer is mounted so wheel and touch input have exactly one meaning.
+  onSettled(() => {
+    document.body.classList.add('explorer-active')
+    window.addEventListener('wheel', handleWheel, { passive: false })
+
+    let observer: ResizeObserver | undefined
+
+    if (feedEl !== undefined) {
+      setViewportHeight(feedEl.clientHeight)
+
+      if (typeof ResizeObserver === 'function') {
+        observer = new ResizeObserver((entries) => {
+          const entry = entries[0]
+
+          if (entry !== undefined) {
+            setViewportHeight(entry.contentRect.height)
+          }
+        })
+        observer.observe(feedEl)
+      }
+    }
+
+    return () => {
+      document.body.classList.remove('explorer-active')
+      window.removeEventListener('wheel', handleWheel)
+      observer?.disconnect()
+      cancelAnimation()
+    }
+  })
+
+  // Once the viewport is measured (and whenever it resizes), keep the
+  // position inside the scrollable range — this is what pins a `?deck=`
+  // link to the last deck into the final viewport instead of past it.
+  createEffect(
+    () => visibleRows(),
+    (rows) => {
+      setPosition((current) => clampPosition(current, rows))
+    },
+  )
+
   onSettled(() => {
     const workerSource = new DeckBatchSource(
       () =>
@@ -210,10 +504,6 @@ export function ExplorerPage() {
         }),
     )
     setSource(workerSource)
-
-    if (scrollEl !== undefined) {
-      scrollEl.scrollTop = scrollTopFor(requestedIndex)
-    }
 
     return () => workerSource.terminate()
   })
@@ -259,48 +549,55 @@ export function ExplorerPage() {
         </p>
       </header>
 
-      <div ref={assignScrollEl} class="explorer-scroll" onScroll={handleScroll}>
+      {/* The feed is a keyboard-operable scroll viewport: focusable, with
+          arrow/page/Home/End scrolling — the accessible pattern for a custom
+          scroll region, which the a11y rule tables do not model. */}
+      {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions */}
+      <section
+        ref={assignFeedEl}
+        class="explorer-feed"
+        // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
+        tabindex="0"
+        aria-label="Deck feed: every deck, in order"
+        data-animating={animating() || undefined}
+        onKeyDown={handleKeyDown}
+        onPointerDown={handleFeedPointerDown}
+        onPointerMove={handleFeedPointerMove}
+        onPointerUp={endTouchDrag}
+        onPointerCancel={endTouchDrag}
+      >
         <div
-          class="explorer-window"
-          style={{ height: `${PHYSICAL_ROWS * ROW_HEIGHT}px` }}
+          class="explorer-strip"
+          style={{ transform: `translateY(-${strip().shiftPx}px)` }}
         >
-          <For each={rows()}>
-            {(row) => (
-              <div class="deck-row" style={{ height: `${ROW_HEIGHT}px` }}>
-                <span class="deck-number">
-                  {permutationIndexToPublicDeckNumber(row.index).toLocaleString(
-                    'en-US',
-                  )}
-                </span>
-                <div class="deck-fan">
-                  {row.cards !== undefined ? (
-                    <For each={Array.from(row.cards)}>
-                      {(id, position) => (
-                        <div
-                          class="deck-card"
-                          style={{
-                            // Deal right-to-left: the first card (face of the
-                            // deck) is rightmost, so each card is covered on
-                            // its right and you read every top-left upright
-                            // pip as you scan left to right.
-                            '--position': position(),
-                            // The face card (position 0) sits on top.
-                            'z-index': 52 - position(),
-                          }}
-                        >
-                          <PlayingCard id={id as CardId} />
-                        </div>
-                      )}
-                    </For>
-                  ) : (
-                    <span class="deck-loading">Shuffling…</span>
-                  )}
-                </div>
-              </div>
+          <For each={rowIndices()}>
+            {(index) => (
+              <DeckRow index={index} cards={() => batches().get(index)} />
             )}
           </For>
         </div>
-      </div>
+
+        <div
+          ref={assignRailEl}
+          class="explorer-rail"
+          // The rail is a pointer affordance; keyboard scrolling lives on the
+          // feed itself and exact addressing lives in the jump form.
+          aria-hidden="true"
+          onPointerDown={handleRailPointerDown}
+          onPointerMove={handleRailPointerMove}
+          onPointerUp={endRailDrag}
+          onPointerCancel={endRailDrag}
+        >
+          <div
+            ref={assignThumbEl}
+            class="explorer-rail-thumb"
+            style={{
+              top: `${thumbTopPercent()}%`,
+              transform: `translateY(-${thumbTopPercent()}%)`,
+            }}
+          />
+        </div>
+      </section>
     </section>
   )
 }

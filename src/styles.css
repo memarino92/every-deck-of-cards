@@ -532,19 +532,75 @@ footer a {
   letter-spacing: 0.05em;
 }
 
-.explorer-scroll {
+/* While the explorer is mounted the feed *is* the page: the document itself
+   does not scroll, so wheel and touch input have exactly one meaning. The
+   masthead and footer stay on screen; the feed fills the space between. */
+body.explorer-active {
+  overflow: hidden;
+}
+
+body.explorer-active main {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+}
+
+body.explorer-active .explorer {
+  flex: 1;
+  min-height: 0;
+}
+
+.explorer-feed {
   position: relative;
-  height: min(72vh, 62rem);
+  min-height: 0;
   margin-bottom: clamp(1rem, 3vh, 2.5rem);
-  overflow-y: auto;
+  overflow: hidden;
   border: 1px solid rgb(244 234 210 / 12%);
   border-radius: 0.5rem;
   background: linear-gradient(rgb(0 0 0 / 18%), rgb(0 0 0 / 18%)), #0b0e0c;
-  scrollbar-color: #c49745 transparent;
+  /* Touch drags are handled as pointer events that move the feed position. */
+  touch-action: none;
 }
 
-.explorer-window {
+.explorer-feed:focus-visible {
+  outline: 2px solid #d6aa5d;
+  outline-offset: -2px;
+}
+
+.explorer-strip {
   position: relative;
+  will-change: transform;
+}
+
+/* Custom scrollbar rail: percent-of-space mapped to an exact deck position
+   (decision 0009). The thumb is fixed-size — a proportional thumb over 52!
+   rows would be sub-pixel — and positioned so 0% pins its top and 100% its
+   bottom to the rail's ends. */
+.explorer-rail {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 1.1rem;
+  cursor: grab;
+}
+
+.explorer-rail:active {
+  cursor: grabbing;
+}
+
+.explorer-rail-thumb {
+  position: absolute;
+  left: 0.25rem;
+  right: 0.25rem;
+  height: 3rem;
+  border-radius: 0.3rem;
+  background: #c49745;
+}
+
+.explorer-rail:hover .explorer-rail-thumb,
+.explorer-rail:active .explorer-rail-thumb {
+  background: #d6aa5d;
 }
 
 .deck-row {
