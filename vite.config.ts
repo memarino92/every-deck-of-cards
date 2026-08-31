@@ -1,5 +1,5 @@
 import solid from '@solidjs/vite-plugin'
-import { defineConfig, lazyPlugins } from 'vite-plus'
+import { defineConfig } from 'vite-plus'
 
 export default defineConfig({
   lint: {
@@ -69,11 +69,41 @@ export default defineConfig({
     singleQuote: true,
     printWidth: 80,
     sortPackageJson: false,
-    ignorePatterns: [],
+    ignorePatterns: [
+      'dist/',
+      'coverage/',
+      'node_modules/',
+      'pnpm-lock.yaml',
+      'test-results/',
+      'playwright-report/',
+    ],
   },
   build: {
     assetsInlineLimit: 0,
     target: 'es2024',
   },
-  plugins: lazyPlugins(() => [solid()]),
+  plugins: [solid({ start: true }), e2eHealthCheck()],
 })
+
+import type { Plugin } from 'vite-plus'
+
+/**
+ * Playwright's webServer readiness probe sends no `Accept` header, and start
+ * mode's history fallback only answers HTML-accepting GETs — so the probe
+ * would 404 and the suite would never start. This endpoint answers 200 for
+ * any request, giving the probe a stable "server is listening" signal. Browsers
+ * never request it. Dev-only; it has no effect on the production build.
+ */
+function e2eHealthCheck(): Plugin {
+  return {
+    name: 'e2e-health-check',
+    apply: 'serve',
+    configureServer(server) {
+      server.middlewares.use('/__health', (_req, res) => {
+        res.statusCode = 200
+        res.setHeader('content-type', 'text/plain')
+        res.end('ok')
+      })
+    },
+  }
+}

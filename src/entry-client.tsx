@@ -10,12 +10,6 @@ import { TalkPage } from './TalkPage.tsx'
 import { WhyPage } from './WhyPage.tsx'
 import './styles.css'
 
-const root = document.querySelector<HTMLElement>('#root')
-
-if (root === null) {
-  throw new Error('Missing application root')
-}
-
 const Router = createRouter({
   routes: [
     { path: '/talk', component: TalkPage },
@@ -33,4 +27,6 @@ const Router = createRouter({
   ],
 })
 
-render(() => <Router>{(props) => props.children}</Router>, root)
+// Start mode's document shell renders an empty <body> in client posture; the
+// authored entry owns the mount, rendering straight into document.body.
+render(() => <Router>{(props) => props.children}</Router>, document.body)
