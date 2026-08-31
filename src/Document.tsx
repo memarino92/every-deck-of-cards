@@ -28,11 +28,11 @@ export default function Document(props: ParentProps) {
         <meta property="og:url" content="https://everydeckof.cards/" />
         <meta
           property="og:title"
-          content="Every Deck of Cards | One Number. One Exact Shuffle."
+          content="Every Deck of Cards | 52 Cards. 80 Unvigintillion Possibilities."
         />
         <meta
           property="og:description"
-          content="Every possible 52-card deck has an exact number. Explore 80 unvigintillion deck orderings without enumerating the rest."
+          content="52 cards. 80 unvigintillion possibilities. Every possible deck has an exact number."
         />
         <meta
           property="og:image"
@@ -43,17 +43,17 @@ export default function Document(props: ParentProps) {
         <meta property="og:image:height" content="630" />
         <meta
           property="og:image:alt"
-          content="Every Deck of Cards title beside a fan of playing cards and the number 52 factorial on a deep green background."
+          content="Every Deck of Cards title and the tagline 52 cards. 80 unvigintillion possibilities. beside a fan of playing cards led by an ace of spades and the number 52 factorial on a deep green background."
         />
 
         <meta name="twitter:card" content="summary_large_image" />
         <meta
           name="twitter:title"
-          content="Every Deck of Cards | One Number. One Exact Shuffle."
+          content="Every Deck of Cards | 52 Cards. 80 Unvigintillion Possibilities."
         />
         <meta
           name="twitter:description"
-          content="Every possible 52-card deck has an exact number. Explore the mathematics behind 52! shuffles."
+          content="52 cards. 80 unvigintillion possibilities. Every possible deck has an exact number."
         />
         <meta
           name="twitter:image"
@@ -61,10 +61,12 @@ export default function Document(props: ParentProps) {
         />
         <meta
           name="twitter:image:alt"
-          content="Every Deck of Cards title beside a fan of playing cards and the number 52 factorial on a deep green background."
+          content="Every Deck of Cards title and the tagline 52 cards. 80 unvigintillion possibilities. beside a fan of playing cards led by an ace of spades and the number 52 factorial on a deep green background."
         />
 
-        <title>Every Deck of Cards | One Number. One Exact Shuffle.</title>
+        <title>
+          Every Deck of Cards | 52 Cards. 80 Unvigintillion Possibilities.
+        </title>
       </head>
       <body>{props.children}</body>
     </html>
