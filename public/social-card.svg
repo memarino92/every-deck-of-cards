@@ -16,27 +16,27 @@
   <text x="70" y="72" fill="#d6aa5d" font-family="Consolas, monospace" font-size="19" font-weight="700" letter-spacing="4">EVERYDECKOF.CARDS</text>
   <text x="70" y="209" fill="#f4ead2" font-family="Georgia, serif" font-size="91" letter-spacing="-4">Every deck</text>
   <text x="120" y="294" fill="#d6aa5d" font-family="Georgia, serif" font-size="91" font-style="italic" letter-spacing="-5">of cards.</text>
-  <text x="73" y="380" fill="#a8b9ae" font-family="Consolas, monospace" font-size="23" letter-spacing="1.5">ONE NUMBER. ONE EXACT SHUFFLE.</text>
+  <text x="73" y="380" fill="#a8b9ae" font-family="Consolas, monospace" font-size="23" letter-spacing="1.5">52 CARDS. 80 UNVIGINTILLION POSSIBILITIES.</text>
   <text x="73" y="507" fill="#91ad9d" font-family="Georgia, serif" font-size="27">Every possible ordering, directly addressable.</text>
 
   <g transform="translate(850 325)" filter="url(#shadow)">
     <g transform="rotate(-19)">
       <rect x="-115" y="-170" width="230" height="340" rx="18" fill="#f4ead2" stroke="#c49745" stroke-width="5" />
-      <text x="-83" y="-111" fill="#1f211e" font-family="Georgia, serif" font-size="43" font-weight="700">A</text>
-      <text x="-88" y="-65" fill="#1f211e" font-family="Georgia, serif" font-size="45">♠</text>
-      <text x="0" y="40" fill="#1f211e" font-family="Georgia, serif" font-size="99" text-anchor="middle">♠</text>
+      <text x="-83" y="-111" fill="#1f211e" font-family="Georgia, serif" font-size="43" font-weight="700">3</text>
+      <text x="-88" y="-65" fill="#1f211e" font-family="Georgia, serif" font-size="45">♣</text>
+      <text x="0" y="40" fill="#1f211e" font-family="Georgia, serif" font-size="99" text-anchor="middle">♣</text>
     </g>
     <g transform="translate(76 -8) rotate(-5)">
       <rect x="-115" y="-170" width="230" height="340" rx="18" fill="#f4ead2" stroke="#c49745" stroke-width="5" />
-      <text x="-84" y="-111" fill="#a83232" font-family="Georgia, serif" font-size="43" font-weight="700">A</text>
+      <text x="-84" y="-111" fill="#a83232" font-family="Georgia, serif" font-size="43" font-weight="700">7</text>
       <text x="-88" y="-65" fill="#a83232" font-family="Georgia, serif" font-size="45">♦</text>
       <text x="0" y="43" fill="#a83232" font-family="Georgia, serif" font-size="99" text-anchor="middle">♦</text>
     </g>
     <g transform="translate(151 11) rotate(11)">
       <rect x="-115" y="-170" width="230" height="340" rx="18" fill="#f4ead2" stroke="#c49745" stroke-width="5" />
-      <text x="-85" y="-111" fill="#1f211e" font-family="Georgia, serif" font-size="43" font-weight="700">K</text>
-      <text x="-88" y="-65" fill="#1f211e" font-family="Georgia, serif" font-size="45">♣</text>
-      <text x="0" y="39" fill="#1f211e" font-family="Georgia, serif" font-size="99" text-anchor="middle">♣</text>
+      <text x="-85" y="-111" fill="#1f211e" font-family="Georgia, serif" font-size="43" font-weight="700">A</text>
+      <text x="-88" y="-65" fill="#1f211e" font-family="Georgia, serif" font-size="45">♠</text>
+      <text x="0" y="39" fill="#1f211e" font-family="Georgia, serif" font-size="99" text-anchor="middle">♠</text>
     </g>
   </g>
 

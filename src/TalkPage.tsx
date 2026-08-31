@@ -19,7 +19,7 @@ export function TalkPage() {
 
   const slides: Slide[] = [
     {
-      title: 'One number. One exact shuffle.',
+      title: '52 cards. 80 unvigintillion possibilities.',
       body: () => (
         <p>
           Every ordering of a 52-card deck has exactly one number. No list, no

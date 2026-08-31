@@ -5,7 +5,7 @@ const deckCount = factorial(52).toLocaleString('en-US')
 export function HomePage() {
   return (
     <section class="hero" aria-labelledby="hero-title">
-      <p class="eyebrow">One number. One exact shuffle.</p>
+      <p class="eyebrow">52 cards. 80 unvigintillion possibilities.</p>
       <h1 id="hero-title">
         Every deck
         <span>of cards.</span>
