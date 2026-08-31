@@ -1,36 +1,30 @@
 /**
- * Fling-scroll capture: measures how the explorer feed behaves under a
- * scripted wheel fling, before and after scroll-model changes. This is the
- * reproducible benchmark behind decision 0009's evidence.
+ * Reproducible explorer wheel-sequence capture for decision 0009.
  *
- * Methodology:
- *   1. Boot the dev server (or attach to one already on the port).
- *   2. Load /explore at a deterministic mid-space deck, viewport 1280x800.
- *   3. Wait for the initial window to resolve (no "Shuffling…" rows).
- *   4. Deliver a fixed fling: 40 wheel events of 600px, 8ms apart
- *      (~24,000px ~ 162 deck rows at 148px/row).
- *   5. Sample the top rendered deck and unresolved-row count every 50ms.
+ * Each run delivers 40 Playwright wheel inputs of 600px sequentially, with an
+ * 8ms minimum pause after each acknowledged dispatch. This is deliberately
+ * not described as a 320ms physical fling: Playwright protocol and browser
+ * processing time are part of `inputDeliveryMs`.
  *
- * Reported metrics:
- *   - movedRows:       decks the top row advanced fling-start -> settle.
- *                      A wall shows up here as far fewer rows than requested.
- *   - topAtFlingEnd:   top row the moment the last wheel event landed;
- *                      "position keeps up with input" when this already
- *                      reflects most of the fling.
- *   - positionSettleMs: fling start -> last change of the top rendered deck.
- *   - dataSettleMs:    fling start -> first sustained sample with zero
- *                      unresolved ("Shuffling…") rows. The "Shuffling dwell".
+ * The script always boots the selected worktree on an unused local port and
+ * records its Git revision, runtime, browser, OS, and CPU. To compare the
+ * implementation with its parent:
  *
- * Usage: node e2e/fling-capture.mjs
- * Requires: pnpm exec playwright install chromium (same as the e2e suite).
+ *   git worktree add ../every-deck-baseline 71ca0c5
+ *   pnpm --dir ../every-deck-baseline install --frozen-lockfile
+ *   node e2e/fling-capture.mjs --project ../every-deck-baseline --runs 5
+ *   node e2e/fling-capture.mjs --project . --runs 5
+ *
+ * Requires the same Chromium installation as the e2e suite:
+ * `pnpm exec playwright install chromium`.
  */
-import { spawn } from 'node:child_process'
+import { spawn, spawnSync } from 'node:child_process'
+import { createServer } from 'node:net'
+import { cpus, platform, release } from 'node:os'
+import { resolve } from 'node:path'
 import { chromium } from '@playwright/test'
 
-const PORT = 5199
-const BASE = `http://localhost:${PORT}`
 const START_DECK = 1_000_000n
-
 const FLING_EVENTS = 40
 const FLING_DELTA_Y = 600
 const FLING_INTERVAL_MS = 8
@@ -38,71 +32,106 @@ const ROW_HEIGHT = 148
 const SAMPLE_INTERVAL_MS = 50
 const SETTLE_TIMEOUT_MS = 15_000
 
-async function isServerUp() {
-  try {
-    const response = await fetch(`${BASE}/__health`)
-    return response.ok
-  } catch {
-    return false
-  }
+function argument(name, fallback) {
+  const index = process.argv.indexOf(name)
+  return index === -1 ? fallback : process.argv[index + 1]
 }
 
-async function waitForServer(timeoutMs) {
+const project = resolve(argument('--project', '.'))
+const runs = Number(argument('--runs', '3'))
+
+if (!Number.isSafeInteger(runs) || runs <= 0) {
+  throw new RangeError('--runs must be a positive safe integer')
+}
+
+async function availablePort() {
+  const server = createServer()
+
+  return new Promise((resolvePort, reject) => {
+    server.once('error', reject)
+    server.listen(0, '127.0.0.1', () => {
+      const address = server.address()
+
+      if (address === null || typeof address === 'string') {
+        reject(new Error('Could not allocate a local port'))
+        return
+      }
+
+      server.close(() => resolvePort(address.port))
+    })
+  })
+}
+
+async function waitForServer(url, child, timeoutMs) {
   const deadline = Date.now() + timeoutMs
 
   while (Date.now() < deadline) {
-    // eslint-disable-next-line no-await-in-loop -- readiness polling is sequential by definition
-    if (await isServerUp()) {
-      return
+    if (child.exitCode !== null) {
+      throw new Error(`Dev server exited with code ${child.exitCode}`)
     }
 
-    // eslint-disable-next-line no-await-in-loop -- wait between polls
-    await new Promise((resolve) => setTimeout(resolve, 250))
+    try {
+      // eslint-disable-next-line no-await-in-loop -- readiness polling is sequential
+      const response = await fetch(`${url}/__health`)
+      if (response.ok) {
+        return
+      }
+    } catch {
+      // Server is still starting.
+    }
+
+    // eslint-disable-next-line no-await-in-loop -- wait between readiness polls
+    await new Promise((resolveWait) => setTimeout(resolveWait, 250))
   }
 
-  throw new Error(`Dev server did not come up on ${BASE}`)
+  throw new Error(`Dev server did not come up on ${url}`)
 }
 
-function spawnServer() {
+function spawnServer(port) {
   const isWindows = process.platform === 'win32'
-  const child = spawn(
+
+  return spawn(
     isWindows ? 'cmd.exe' : 'pnpm',
     isWindows
-      ? ['/c', 'pnpm.cmd', 'dev', '--port', String(PORT), '--strictPort']
-      : ['dev', '--port', String(PORT), '--strictPort'],
-    { stdio: 'ignore' },
+      ? ['/c', 'pnpm.cmd', 'dev', '--port', String(port), '--strictPort']
+      : ['dev', '--port', String(port), '--strictPort'],
+    { cwd: project, stdio: 'ignore' },
   )
-
-  return child
 }
 
 function stopServer(child) {
-  if (child === undefined) {
-    return
-  }
-
   if (process.platform === 'win32') {
-    // pnpm.cmd wraps the real server process; kill the whole tree.
-    spawn('taskkill', ['/pid', String(child.pid), '/T', '/F'])
+    spawnSync('taskkill', ['/pid', String(child.pid), '/T', '/F'], {
+      stdio: 'ignore',
+    })
   } else {
     child.kill()
   }
 }
 
-async function main() {
-  let server
-  if (!(await isServerUp())) {
-    server = spawnServer()
-  }
-  await waitForServer(60_000)
+function revision() {
+  const command = process.platform === 'win32' ? 'git.exe' : 'git'
+  const result = spawnSync(command, ['rev-parse', 'HEAD'], {
+    cwd: project,
+    encoding: 'utf8',
+  })
 
-  const browser = await chromium.launch()
+  if (result.status !== 0) {
+    throw new Error(result.stderr || 'Could not read project revision')
+  }
+
+  return result.stdout.trim()
+}
+
+async function runCapture(browser, baseUrl) {
+  const page = await browser.newPage({ viewport: { width: 1280, height: 800 } })
 
   try {
-    const page = await browser.newPage({
-      viewport: { width: 1280, height: 800 },
-    })
-    await page.goto(`${BASE}/explore?deck=${START_DECK.toString()}`)
+    await page.goto(`${baseUrl}/explore?deck=${START_DECK.toString()}`)
+    await page.waitForFunction(
+      () => document.querySelectorAll('.deck-row .deck-loading').length === 0,
+      { timeout: SETTLE_TIMEOUT_MS },
+    )
 
     const topDeck = async () => {
       const text = await page
@@ -113,111 +142,121 @@ async function main() {
     }
     const loadingRows = () => page.locator('.deck-row .deck-loading').count()
 
-    // Wait for the initial window to fully resolve.
-    await page
-      .waitForFunction(
-        () => document.querySelectorAll('.deck-row .deck-loading').length === 0,
-        { timeout: SETTLE_TIMEOUT_MS },
-      )
-      .catch(() => {})
-
-    const explorer = page.locator('.explorer')
-    const box = await explorer.boundingBox()
-    if (box === null) {
-      throw new Error('Explorer section not found')
-    }
-    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
-
+    await page.locator('.explorer').hover()
     const topBefore = await topDeck()
-    const t0 = Date.now()
-    const samples = []
+    const startedAt = Date.now()
 
-    // Deliver the fling.
     for (let event = 0; event < FLING_EVENTS; event += 1) {
-      // eslint-disable-next-line no-await-in-loop -- the fling is sequential input by definition
+      // eslint-disable-next-line no-await-in-loop -- inputs are intentionally sequential
       await page.mouse.wheel(0, FLING_DELTA_Y)
-      if (event % 8 === 0) {
-        samples.push({
-          t: Date.now() - t0,
-          // eslint-disable-next-line no-await-in-loop -- sampling follows the input
-          top: await topDeck(),
-          // eslint-disable-next-line no-await-in-loop -- sampling follows the input
-          loading: await loadingRows(),
-        })
-      }
-      // eslint-disable-next-line no-await-in-loop -- pacing between events
-      await new Promise((resolve) => setTimeout(resolve, FLING_INTERVAL_MS))
+      // eslint-disable-next-line no-await-in-loop -- minimum pacing follows each input
+      await new Promise((resolveWait) =>
+        setTimeout(resolveWait, FLING_INTERVAL_MS),
+      )
     }
 
-    const tFlingEnd = Date.now() - t0
-    const topAtFlingEnd = await topDeck()
-    const loadingAtFlingEnd = await loadingRows()
-
-    // Sample until position and data settle.
-    let lastTopChange = tFlingEnd
-    let dataSettledAt
-    let previousTop = topAtFlingEnd
-    let stableStreak = 0
+    const inputDeliveryMs = Date.now() - startedAt
+    const topAtInputEnd = await topDeck()
+    const loadingAtInputEnd = await loadingRows()
+    let previousTop = topAtInputEnd
+    let lastPositionChangeMs = inputDeliveryMs
+    let dataSettledAtMs
+    let stableSamples = 0
 
     for (
       let waited = 0;
       waited < SETTLE_TIMEOUT_MS;
       waited += SAMPLE_INTERVAL_MS
     ) {
-      // eslint-disable-next-line no-await-in-loop -- settle sampling is time-ordered
-      await new Promise((resolve) => setTimeout(resolve, SAMPLE_INTERVAL_MS))
-      // eslint-disable-next-line no-await-in-loop -- settle sampling is time-ordered
+      // eslint-disable-next-line no-await-in-loop -- settling samples are time-ordered
+      await new Promise((resolveWait) =>
+        setTimeout(resolveWait, SAMPLE_INTERVAL_MS),
+      )
+      // eslint-disable-next-line no-await-in-loop -- each sample follows the prior one
       const top = await topDeck()
-      // eslint-disable-next-line no-await-in-loop -- settle sampling is time-ordered
+      // eslint-disable-next-line no-await-in-loop -- each sample follows the prior one
       const loading = await loadingRows()
-      const t = Date.now() - t0
+      const elapsed = Date.now() - startedAt
 
-      if (top !== previousTop) {
-        lastTopChange = t
-        previousTop = top
-        stableStreak = 0
+      if (top === previousTop) {
+        stableSamples += 1
       } else {
-        stableStreak += 1
+        previousTop = top
+        lastPositionChangeMs = elapsed
+        stableSamples = 0
       }
 
-      if (loading === 0 && dataSettledAt === undefined) {
-        dataSettledAt = t
-      }
-      if (loading > 0) {
-        dataSettledAt = undefined
-      }
+      dataSettledAtMs = loading === 0 ? (dataSettledAtMs ?? elapsed) : undefined
 
-      if (stableStreak >= 4 && loading === 0) {
+      if (stableSamples >= 4 && loading === 0) {
         break
       }
     }
 
-    const topAfter = previousTop
-    const expectedRows = BigInt(
-      Math.round((FLING_EVENTS * FLING_DELTA_Y) / ROW_HEIGHT),
-    )
-
-    const report = {
-      scenario: {
-        startDeck: START_DECK.toString(),
-        viewport: '1280x800',
-        fling: `${FLING_EVENTS} x ${FLING_DELTA_Y}px @ ${FLING_INTERVAL_MS}ms`,
-        expectedRowsFromInput: expectedRows.toString(),
-      },
-      movedRows: (topAfter - topBefore).toString(),
-      topAtFlingEndDelta: (topAtFlingEnd - topBefore).toString(),
-      loadingRowsAtFlingEnd: loadingAtFlingEnd,
-      flingDurationMs: tFlingEnd,
-      positionSettleMs: lastTopChange,
-      dataSettleMs: dataSettledAt ?? null,
-      timedOut: dataSettledAt === undefined,
+    return {
+      movedRows: (previousTop - topBefore).toString(),
+      topAtInputEndDelta: (topAtInputEnd - topBefore).toString(),
+      loadingRowsAtInputEnd: loadingAtInputEnd,
+      inputDeliveryMs,
+      positionSettleMs: lastPositionChangeMs,
+      dataSettleMs: dataSettledAtMs ?? null,
+      dataDwellAfterInputMs:
+        dataSettledAtMs === undefined
+          ? null
+          : dataSettledAtMs - inputDeliveryMs,
+      timedOut: dataSettledAtMs === undefined,
     }
-
-    console.log(JSON.stringify(report, null, 2))
   } finally {
-    await browser.close()
-    stopServer(server)
+    await page.close()
   }
 }
 
-await main()
+const port = await availablePort()
+const baseUrl = `http://localhost:${port}`
+const server = spawnServer(port)
+
+try {
+  await waitForServer(baseUrl, server, 60_000)
+  const browser = await chromium.launch()
+
+  try {
+    const captures = []
+
+    for (let run = 0; run < runs; run += 1) {
+      // eslint-disable-next-line no-await-in-loop -- benchmark repetitions are isolated
+      captures.push(await runCapture(browser, baseUrl))
+    }
+
+    const expectedRows = Math.floor((FLING_EVENTS * FLING_DELTA_Y) / ROW_HEIGHT)
+
+    console.log(
+      JSON.stringify(
+        {
+          environment: {
+            revision: revision(),
+            project,
+            node: process.version,
+            browser: browser.version(),
+            os: `${platform()} ${release()}`,
+            cpu: cpus()[0]?.model ?? 'unknown',
+          },
+          scenario: {
+            runs,
+            startDeck: START_DECK.toString(),
+            viewport: '1280x800',
+            input: `${FLING_EVENTS} sequential Playwright wheel events x ${FLING_DELTA_Y}px with ${FLING_INTERVAL_MS}ms minimum gaps`,
+            expectedRowsFromInput: String(expectedRows),
+            server: 'development',
+          },
+          captures,
+        },
+        null,
+        2,
+      ),
+    )
+  } finally {
+    await browser.close()
+  }
+} finally {
+  stopServer(server)
+}

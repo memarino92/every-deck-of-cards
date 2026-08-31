@@ -23,7 +23,10 @@ const MAX_TOP = LAST_INDEX - BigInt(VISIBLE) + 1n
 
 describe('createPosition', () => {
   it('accepts a valid position', () => {
-    expect(createPosition(1000n, 40)).toEqual({ topIndex: 1000n, offsetPx: 40 })
+    expect(createPosition(1000n, 40, ROW)).toEqual({
+      topIndex: 1000n,
+      offsetPx: 40,
+    })
   })
 
   it('rejects out-of-range indices and bad offsets', () => {
@@ -32,6 +35,8 @@ describe('createPosition', () => {
     expect(() => createPosition(0 as unknown as bigint)).toThrow(RangeError)
     expect(() => createPosition(0n, -1)).toThrow(RangeError)
     expect(() => createPosition(0n, Number.NaN)).toThrow(RangeError)
+    expect(() => createPosition(0n, ROW, ROW)).toThrow(RangeError)
+    expect(() => createPosition(0n, 1)).toThrow(RangeError)
   })
 })
 
@@ -60,7 +65,7 @@ describe('maxTopIndex', () => {
 
 describe('clampPosition', () => {
   it('leaves mid-space positions untouched', () => {
-    const position = createPosition(1000n, 40)
+    const position = createPosition(1000n, 40, ROW)
     expect(clampPosition(position, VISIBLE)).toEqual(position)
   })
 
@@ -91,7 +96,7 @@ describe('advancePosition', () => {
 
   it('carries a full row out of a combined offset', () => {
     expect(
-      advancePosition(createPosition(100n, 100), 100, ROW, VISIBLE),
+      advancePosition(createPosition(100n, 100, ROW), 100, ROW, VISIBLE),
     ).toEqual({
       topIndex: 101n,
       offsetPx: 52,
@@ -100,7 +105,7 @@ describe('advancePosition', () => {
 
   it('borrows a row when scrolling up past the row boundary', () => {
     expect(
-      advancePosition(createPosition(100n, 30), -50, ROW, VISIBLE),
+      advancePosition(createPosition(100n, 30, ROW), -50, ROW, VISIBLE),
     ).toEqual({
       topIndex: 99n,
       offsetPx: ROW - 20,
@@ -109,21 +114,18 @@ describe('advancePosition', () => {
 
   it('keeps sub-row offset when scrolling within the first row', () => {
     // Regression: scrolling down inside deck 1 must not lose the offset.
-    expect(advancePosition(createPosition(0n, 30), 50, ROW, VISIBLE)).toEqual({
-      topIndex: 0n,
-      offsetPx: 80,
-    })
-    expect(advancePosition(createPosition(0n, 30), -10, ROW, VISIBLE)).toEqual({
-      topIndex: 0n,
-      offsetPx: 20,
-    })
+    expect(
+      advancePosition(createPosition(0n, 30, ROW), 50, ROW, VISIBLE),
+    ).toEqual({ topIndex: 0n, offsetPx: 80 })
+    expect(
+      advancePosition(createPosition(0n, 30, ROW), -10, ROW, VISIBLE),
+    ).toEqual({ topIndex: 0n, offsetPx: 20 })
   })
 
   it('pins the start of the space at exactly {0, 0}', () => {
-    expect(advancePosition(createPosition(0n, 30), -50, ROW, VISIBLE)).toEqual({
-      topIndex: 0n,
-      offsetPx: 0,
-    })
+    expect(
+      advancePosition(createPosition(0n, 30, ROW), -50, ROW, VISIBLE),
+    ).toEqual({ topIndex: 0n, offsetPx: 0 })
     expect(advancePosition(createPosition(0n, 0), -10, ROW, VISIBLE)).toEqual({
       topIndex: 0n,
       offsetPx: 0,
@@ -143,7 +145,12 @@ describe('advancePosition', () => {
     // One row short of the end plus a sub-row offset; scrolling down must
     // pin to {maxTop, 0}, not stop at a dangling offset.
     expect(
-      advancePosition(createPosition(MAX_TOP - 1n, 100), 100, ROW, VISIBLE),
+      advancePosition(
+        createPosition(MAX_TOP - 1n, 100, ROW),
+        100,
+        ROW,
+        VISIBLE,
+      ),
     ).toEqual({ topIndex: MAX_TOP, offsetPx: 0 })
   })
 
@@ -234,7 +241,7 @@ describe('easeInOutCubic', () => {
 
 describe('interpolatePosition', () => {
   it('returns the exact endpoints at t = 0 and t = 1', () => {
-    const from = createPosition(1000n, 20)
+    const from = createPosition(1000n, 20, ROW)
     const to = createPosition(MAX_TOP, 0)
 
     expect(interpolatePosition(from, to, 0, ROW, VISIBLE)).toEqual(from)
@@ -295,11 +302,20 @@ describe('interpolatePosition', () => {
       ),
     ).toThrow(RangeError)
   })
+
+  it('keeps pixel interpolation inside the safe-number boundary', () => {
+    const safeRows = BigInt(Math.floor(Number.MAX_SAFE_INTEGER / ROW))
+    const from = createPosition(0n, 0)
+    const to = createPosition(safeRows, 0)
+    const midway = interpolatePosition(from, to, 0.5, ROW, VISIBLE)
+
+    expect(midway.topIndex).toBe(safeRows / 2n)
+  })
 })
 
 describe('stripRange', () => {
   it('renders the visible span plus overscan on both sides', () => {
-    const strip = stripRange(createPosition(1000n, 40), VIEWPORT, ROW, 8)
+    const strip = stripRange(createPosition(1000n, 40, ROW), VIEWPORT, ROW, 8)
 
     expect(strip.start).toBe(992n)
     expect(strip.count).toBe(8 + VISIBLE + 8)
@@ -307,7 +323,7 @@ describe('stripRange', () => {
   })
 
   it('clips overscan at the start of the space', () => {
-    const strip = stripRange(createPosition(2n, 10), VIEWPORT, ROW, 8)
+    const strip = stripRange(createPosition(2n, 10, ROW), VIEWPORT, ROW, 8)
 
     expect(strip.start).toBe(0n)
     expect(strip.shiftPx).toBe(2 * ROW + 10)
@@ -321,6 +337,14 @@ describe('stripRange', () => {
     expect(strip.start).toBe(MAX_TOP - 8n)
     expect(strip.start + BigInt(strip.count) - 1n).toBe(LAST_INDEX)
     expect(strip.shiftPx).toBe(8 * ROW)
+  })
+
+  it('includes the bottom partial row introduced by a sub-row offset', () => {
+    const position = advancePosition(createPosition(1000n, 0), 1, ROW, VISIBLE)
+    const strip = stripRange(position, 2 * ROW, ROW, 0)
+
+    expect(strip.start).toBe(1000n)
+    expect(strip.count).toBe(3)
   })
 
   it('rejects bad geometry', () => {

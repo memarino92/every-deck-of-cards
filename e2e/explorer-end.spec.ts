@@ -18,22 +18,28 @@ const LAST_DECK_PLAIN = LAST_DECK.replaceAll(',', '')
  */
 const NEAR_END_INDEX = (BigInt(LAST_DECK_PLAIN) - 1n - 120n).toString()
 
-/** The largest deck number currently rendered. */
-async function maxVisibleDeck(page: Page): Promise<bigint> {
-  const numbers = await page.locator('.deck-row .deck-number').allTextContents()
+/** Deck numbers whose rows intersect the feed viewport (overscan excluded). */
+async function visibleDecks(page: Page): Promise<bigint[]> {
+  const numbers = await page.locator('.explorer-feed').evaluate((feed) => {
+    const viewport = feed.getBoundingClientRect()
 
-  return numbers
-    .map((text) => BigInt(text.replaceAll(',', '')))
-    .reduce((a, b) => (a > b ? a : b))
+    return [...feed.querySelectorAll('.deck-row')]
+      .filter((row) => {
+        const rect = row.getBoundingClientRect()
+        return rect.bottom > viewport.top && rect.top < viewport.bottom
+      })
+      .map((row) => row.querySelector('.deck-number')?.textContent ?? '')
+  })
+
+  return numbers.map((text) => BigInt(text.replaceAll(',', '')))
 }
 
-/** The smallest deck number currently rendered. */
-async function minVisibleDeck(page: Page): Promise<bigint> {
-  const numbers = await page.locator('.deck-row .deck-number').allTextContents()
+async function maxVisibleDeck(page: Page): Promise<bigint> {
+  return (await visibleDecks(page)).reduce((a, b) => (a > b ? a : b))
+}
 
-  return numbers
-    .map((text) => BigInt(text.replaceAll(',', '')))
-    .reduce((a, b) => (a < b ? a : b))
+async function minVisibleDeck(page: Page): Promise<bigint> {
+  return (await visibleDecks(page)).reduce((a, b) => (a < b ? a : b))
 }
 
 /** Wheel-scroll the explorer until `goal` returns true or attempts run out. */

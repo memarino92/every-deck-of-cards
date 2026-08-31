@@ -7,7 +7,7 @@ Address and render any of the `52!` orderings of a standard deck without enumera
 ## Boundaries
 
 - `domain`: pure TypeScript for cards, factorials, permutation ranking, curated decks, randomness, and magnitude calculations
-- `worker`: typed messages, cancellation, batching, and transferable card buffers
+- `worker`: typed messages, stale-response suppression, batching, and transferable card buffers
 - `virtualization`: holds the explorer's scroll position as a `bigint` virtual position and maps it to a bounded rendered strip
 - `ui`: Solid components, navigation, controls, documentation, and talk mode
 - `deployment`: immutable static assets served by Cloudflare without an application Worker

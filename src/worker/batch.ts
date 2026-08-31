@@ -74,11 +74,10 @@ export function unrankBatch(startIndex: bigint, count: number): Batch {
 }
 
 /**
- * Like `unrankBatch`, but yields to the event loop every few decks so a
- * superseding request is picked up promptly during fast scroll. `shouldCancel`
- * abandons a superseded batch early; when it returns true the partially filled
- * buffer is discarded and the promise resolves to `undefined`. The default
- * yield is a microtask, cheap enough that a full window stays sub-millisecond.
+ * Like `unrankBatch`, but checks `shouldCancel` between decks. An injected
+ * scheduler can expose cancellation between chunks (used by the tests); the
+ * default microtask keeps the producer asynchronous without claiming worker
+ * message-task preemption. A cancelled partial buffer is discarded.
  */
 export async function unrankBatchIncremental(
   startIndex: bigint,
@@ -105,7 +104,7 @@ export async function unrankBatchIncremental(
     if (deck + 1 < resolvedCount) {
       nextPermutation(ordering)
 
-      // Yield every few decks so the worker can receive a superseding request.
+      // Give an injected scheduler a cancellation point every few decks.
       if (deck % 4 === 3) {
         // eslint-disable-next-line no-await-in-loop -- intentional cooperative yield between decks
         await yieldControl()
