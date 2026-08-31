@@ -63,15 +63,14 @@ test.describe('explorer scrollbar rail', () => {
       .poll(async () => (await maxVisibleDeck(page)).toString())
       .toBe(LAST_DECK_PLAIN)
 
-    // And back: crank past the top returns to deck 1.
+    // And back: the rail belongs to the whole home surface, so cranking past
+    // the top returns to the intro before deck 1.
     await page.mouse.move(railCenterX, railBox.y + railBox.height - 4)
     await page.mouse.down()
     await page.mouse.move(railCenterX, railBox.y - 50, { steps: 12 })
     await page.mouse.up()
 
-    await expect
-      .poll(async () => (await minVisibleDeck(page)).toString())
-      .toBe('1')
+    await expect(page.locator('.home-hero')).toBeVisible()
   })
 
   test('dragging to the middle lands in the middle of the space', async ({

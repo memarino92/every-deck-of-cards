@@ -62,7 +62,11 @@ function renderExplorer(): void {
 // The feed measures itself; jsdom reports zero heights, so stub a viewport
 // tall enough for several rows. The expected strip comes from the same pure
 // math the component uses.
-const STUBBED_FEED_HEIGHT = 800
+const STUBBED_SURFACE_HEIGHT = 800
+// jsdom's getBoundingClientRect reports zero for the controls bar; this suite
+// verifies loading, not browser geometry (covered by Playwright).
+const STUBBED_BAR_HEIGHT = 0
+const STUBBED_FEED_HEIGHT = STUBBED_SURFACE_HEIGHT - STUBBED_BAR_HEIGHT
 const ROW_HEIGHT = 148
 const OVERSCAN_ROWS = 8
 const EXPECTED_STRIP = stripRange(
@@ -85,7 +89,18 @@ describe('ExplorerPage initial load', () => {
     } as unknown as typeof Worker)
     clientHeightSpy = vi
       .spyOn(HTMLElement.prototype, 'clientHeight', 'get')
-      .mockReturnValue(STUBBED_FEED_HEIGHT)
+      .mockImplementation(function (this: HTMLElement) {
+        if (this.classList.contains('explorer')) {
+          return STUBBED_SURFACE_HEIGHT
+        }
+        if (this.classList.contains('explorer-bar')) {
+          return STUBBED_BAR_HEIGHT
+        }
+        if (this.classList.contains('explorer-intro')) {
+          return 0
+        }
+        return STUBBED_FEED_HEIGHT
+      })
   })
 
   afterEach(() => {
@@ -98,12 +113,12 @@ describe('ExplorerPage initial load', () => {
     renderExplorer()
 
     await waitFor(() => {
-      expect(fakeWorker.requests.length).toBeGreaterThan(0)
+      expect(fakeWorker.requests.at(-1)?.count).toBe(EXPECTED_STRIP.count)
     })
 
-    // The first request covers the strip starting at deck 1 (index 0).
-    expect(fakeWorker.requests[0]?.startIndex).toBe(0n)
-    expect(fakeWorker.requests[0]?.count).toBe(EXPECTED_STRIP.count)
+    // Once viewport geometry settles, the request covers the full strip
+    // starting at deck 1 (index 0).
+    expect(fakeWorker.requests.at(-1)?.startIndex).toBe(0n)
   })
 
   it('renders card rows after the initial batch resolves', async () => {

@@ -22,7 +22,7 @@ All indices use `bigint`. JavaScript `number` cannot exactly represent this rang
 
 ## Rendering
 
-The browser cannot create a scroll area with `52!` rows. The home page uses normal document scrolling for its compact introduction, then hands input to a full-page explorer whose scroll position is application state: a `bigint` virtual position (the deck under the viewport's top edge plus a sub-row pixel offset) that wheel, keyboard, touch, and scrollbar-rail input advance directly. A bounded strip of rows — visible plus small overscan — follows the position, and a custom scrollbar rail maps percent-of-space back to an exact integer position. Only the strip's rows exist in memory or the DOM; deck numbers render synchronously from the position while card faces load asynchronously from the worker.
+The browser cannot create a scroll area with `52!` rows. The home page is one viewport-owned scroll surface: a finite pixel offset moves its compact introduction away, then the existing `bigint` virtual position (the deck under the feed viewport's top edge plus a sub-row pixel offset) advances through the permutation space. Wheel, keyboard, touch, and scrollbar-rail input drive that unified state while native document scrolling stays disabled. A bounded strip of rows — visible plus small overscan — follows the deck position, and a custom scrollbar rail maps percent-of-space back to an exact integer position. Only the strip's rows exist in memory or the DOM; deck numbers render synchronously while card faces load asynchronously from the worker.
 
 ## Computation
 

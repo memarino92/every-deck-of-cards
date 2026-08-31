@@ -11,7 +11,7 @@ test.describe('explorer-first home', () => {
     ).toBeVisible()
   })
 
-  test('uses the full page feed with sticky controls and GitHub masthead link', async ({
+  test('uses one full-page surface with pinned controls and GitHub masthead link', async ({
     page,
   }) => {
     await page.goto('/')
@@ -21,6 +21,13 @@ test.describe('explorer-first home', () => {
       page.getByRole('link', { name: 'Every Deck of Cards on GitHub' }),
     ).toBeVisible()
     await expect(page.locator('footer')).toHaveCount(0)
+    expect(
+      await page.evaluate(() => ({
+        bodyOverflow: getComputedStyle(document.body).overflow,
+        documentFitsViewport:
+          document.documentElement.scrollHeight <= globalThis.innerHeight,
+      })),
+    ).toEqual({ bodyOverflow: 'hidden', documentFitsViewport: true })
 
     const controls = page.locator('.explorer-bar')
     const feed = page.locator('.explorer-feed')
@@ -29,37 +36,40 @@ test.describe('explorer-first home', () => {
       .first()
       .textContent()
 
-    // The first wheel input scrolls the compact intro as a normal document;
-    // it does not advance the virtual position before the feed takes over.
-    await page.mouse.wheel(0, 12_000)
-    await expect(controls).toBeInViewport()
+    // Intro and feed share one custom surface; the browser document never
+    // develops or moves a second scroll position.
+    await page.locator('.home-hero').hover()
+    await page.mouse.wheel(0, 200)
+    await expect(page.locator('.explorer')).toHaveAttribute(
+      'data-intro-visible',
+      '',
+    )
     expect(await page.locator('.deck-number').first().textContent()).toBe(
       initialFirstRow,
     )
+    expect(await page.evaluate(() => scrollY)).toBe(0)
 
-    // Once the document reaches the feed, the same wheel input advances the
-    // bigint virtual position while the controls remain pinned.
-    await feed.hover()
+    // Continuing the same gesture stream moves through the intro and into the
+    // bigint deck position without switching scroll containers.
     await page.mouse.wheel(0, 2_000)
+    await expect(page.locator('.explorer')).not.toHaveAttribute(
+      'data-intro-visible',
+      /.*/,
+    )
     await expect(controls).toBeInViewport()
     await expect(page.locator('.deck-number').first()).not.toHaveText(
       initialFirstRow ?? '',
     )
 
-    // Returning the virtual feed to deck 1 hands upward scrolling back to the
-    // document so the intro is reachable again.
+    // Home returns to the beginning of that same surface, not a document
+    // scrollbar outside it.
     await feed.focus()
     await page.keyboard.press('Home')
-    const documentBottom = await page.evaluate(() => scrollY)
-    await page.mouse.wheel(0, -600)
-    await expect
-      .poll(() => page.evaluate(() => scrollY))
-      .toBeLessThan(documentBottom)
+    await expect(page.locator('.home-hero')).toBeVisible()
+    expect(await page.evaluate(() => scrollY)).toBe(0)
   })
 
-  test('hands touch drags between the document and virtual feed', async ({
-    page,
-  }) => {
+  test('keeps touch drags in the unified home surface', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 })
     const client = await page.context().newCDPSession(page)
     await client.send('Emulation.setTouchEmulationEnabled', {
@@ -73,6 +83,10 @@ test.describe('explorer-first home', () => {
         () => document.documentElement.scrollWidth <= globalThis.innerWidth,
       ),
     ).toBe(true)
+    await expect(page.locator('.explorer')).toHaveCSS(
+      'touch-action',
+      'pinch-zoom',
+    )
 
     const drag = async (fromY: number, toY: number): Promise<void> => {
       const x = 195
@@ -95,15 +109,16 @@ test.describe('explorer-first home', () => {
       })
     }
 
-    // A trusted touch gesture over the intro uses native document scrolling.
+    // Trusted touch input moves the intro inside the unified surface while the
+    // browser document remains fixed.
     await drag(700, 100)
-    await expect.poll(() => page.evaluate(() => scrollY)).toBeGreaterThan(0)
-
-    // At the document boundary, a gesture over the feed advances the virtual
-    // position instead of overscrolling the page.
-    await page.evaluate(() =>
-      scrollTo(0, document.documentElement.scrollHeight),
+    await expect(page.locator('.explorer')).not.toHaveAttribute(
+      'data-intro-visible',
+      /.*/,
     )
+    expect(await page.evaluate(() => scrollY)).toBe(0)
+
+    // Further gestures advance the virtual deck position in the same surface.
     await drag(700, 100)
     await drag(700, 100)
     await drag(700, 100)
@@ -112,12 +127,78 @@ test.describe('explorer-first home', () => {
     const feed = page.locator('.explorer-feed')
     await feed.focus()
     await page.keyboard.press('Home')
-    const documentBottom = await page.evaluate(() => scrollY)
 
-    // At deck 1, the reverse gesture is native again and reveals the intro.
-    await drag(200, 700)
+    await expect(page.locator('.home-hero')).toBeVisible()
+    expect(await page.evaluate(() => scrollY)).toBe(0)
+  })
+
+  test('keeps the first and last deck rows clear of the pinned controls', async ({
+    page,
+  }) => {
+    await page.goto('/?deck=1')
+
+    const feed = page.locator('.explorer-feed')
+    const controls = page.locator('.explorer-bar')
+    const firstNumber = page.locator('.deck-number', { hasText: /^1$/ })
+    const firstRow = firstNumber.locator('..')
     await expect
-      .poll(() => page.evaluate(() => scrollY))
-      .toBeLessThan(documentBottom)
+      .poll(async () => {
+        const [feedBox, controlsBox] = await Promise.all([
+          feed.boundingBox(),
+          controls.boundingBox(),
+        ])
+        return (
+          feedBox !== null &&
+          controlsBox !== null &&
+          Math.abs(feedBox.y - (controlsBox.y + controlsBox.height)) <= 0.5
+        )
+      })
+      .toBe(true)
+    await expect(firstNumber).toBeInViewport()
+
+    const [feedBox, controlsBox, firstNumberBox, firstRowBox] =
+      await Promise.all([
+        feed.boundingBox(),
+        controls.boundingBox(),
+        firstNumber.boundingBox(),
+        firstRow.boundingBox(),
+      ])
+    if (
+      feedBox === null ||
+      controlsBox === null ||
+      firstNumberBox === null ||
+      firstRowBox === null
+    ) {
+      throw new Error('Explorer edge geometry is unavailable')
+    }
+    expect(firstRowBox.y).toBeGreaterThanOrEqual(
+      controlsBox.y + controlsBox.height - 0.5,
+    )
+    expect(firstNumberBox.y).toBeGreaterThanOrEqual(feedBox.y)
+
+    await page.locator('.jump .end-button').click()
+    await expect(feed).not.toHaveAttribute('data-animating', /.*/)
+
+    const lastDeck =
+      '80,658,175,170,943,878,571,660,636,856,403,766,975,289,505,440,883,277,824,000,000,000,000'
+    const lastRow = page
+      .locator('.deck-number', { hasText: lastDeck })
+      .locator('..')
+    await expect(lastRow).toBeInViewport()
+
+    const [finalFeedBox, lastRowBox] = await Promise.all([
+      feed.boundingBox(),
+      lastRow.boundingBox(),
+    ])
+    if (finalFeedBox === null || lastRowBox === null) {
+      throw new Error('Explorer end geometry is unavailable')
+    }
+    expect(
+      Math.abs(
+        lastRowBox.y +
+          lastRowBox.height -
+          (finalFeedBox.y + finalFeedBox.height),
+      ),
+    ).toBeLessThanOrEqual(1)
   })
 })

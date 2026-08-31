@@ -6,7 +6,7 @@ import { DECK_COUNT } from '../domain/deck-number.ts'
  * The browser cannot create a scroll region of `DECK_COUNT` rows, and a
  * recentering window cannot offer an end-to-end scrollbar. Instead the
  * explorer holds its scroll position as application state: a `FeedPosition`
- * naming the deck at the viewport's top edge plus a sub-row pixel offset.
+ * naming the deck at the feed viewport's top edge plus a sub-row pixel offset.
  * Wheel, keyboard, touch-drag, and scrollbar-rail input all advance this
  * position directly — position updates do not await worker data. Only the
  * card faces load asynchronously; deck numbers render synchronously from the
@@ -19,7 +19,7 @@ import { DECK_COUNT } from '../domain/deck-number.ts'
 
 export const LAST_INDEX = DECK_COUNT - 1n
 
-/** The deck at the viewport's top edge, plus sub-row scroll within it. */
+/** The deck at the feed viewport's top edge, plus sub-row scroll within it. */
 export interface FeedPosition {
   /** Zero-based permutation index of the deck under the top edge. */
   readonly topIndex: bigint
@@ -93,18 +93,37 @@ export function maxTopIndex(visibleRows: number): bigint {
   return maxTop < 0n ? 0n : maxTop
 }
 
+function maximumPosition(
+  visibleRows: number,
+  endOffsetPx: number,
+  rowHeightPx?: number,
+): FeedPosition {
+  const topIndex = maxTopIndex(visibleRows)
+
+  return endOffsetPx === 0
+    ? createPosition(topIndex, 0)
+    : createPosition(topIndex, endOffsetPx, rowHeightPx)
+}
+
 /**
  * Clamp a position into the scrollable range. At the end of the space the
- * last deck pins to the bottom row, so the offset is zeroed at `maxTopIndex`.
+ * last deck pins to the bottom row, including any sub-row viewport remainder.
  */
 export function clampPosition(
   position: FeedPosition,
   visibleRows: number,
+  endOffsetPx = 0,
+  rowHeightPx?: number,
 ): FeedPosition {
-  const maxTop = maxTopIndex(visibleRows)
+  const maximum = maximumPosition(visibleRows, endOffsetPx, rowHeightPx)
 
-  if (position.topIndex >= maxTop) {
-    return createPosition(maxTop, 0)
+  if (
+    position.topIndex > maximum.topIndex ||
+    position.topIndex === LAST_INDEX ||
+    (position.topIndex === maximum.topIndex &&
+      position.offsetPx >= maximum.offsetPx)
+  ) {
+    return maximum
   }
 
   return position
@@ -115,13 +134,14 @@ export function clampPosition(
  * move `topIndex`; the remainder stays as the sub-row offset, so smooth
  * trackpad and wheel input is lossless. Both ends of the space pin: scrolling
  * up past deck 1 lands on `{0, 0}`; scrolling down pins the last deck to the
- * bottom row with zero offset.
+ * bottom row with the configured endpoint offset.
  */
 export function advancePosition(
   position: FeedPosition,
   deltaPx: number,
   rowHeightPx: number,
   visibleRows: number,
+  endOffsetPx = 0,
 ): FeedPosition {
   if (!Number.isFinite(deltaPx)) {
     throw new RangeError('Delta must be a finite number')
@@ -134,14 +154,17 @@ export function advancePosition(
   const rowDelta = Math.floor(totalPx / rowHeightPx)
   const offsetPx = totalPx - rowDelta * rowHeightPx
   const top = position.topIndex + BigInt(rowDelta)
-  const maxTop = maxTopIndex(visibleRows)
+  const maximum = maximumPosition(visibleRows, endOffsetPx, rowHeightPx)
 
   if (top < 0n) {
     return createPosition(0n, 0)
   }
 
-  if (top >= maxTop) {
-    return createPosition(maxTop, 0)
+  if (
+    top > maximum.topIndex ||
+    (top === maximum.topIndex && offsetPx >= maximum.offsetPx)
+  ) {
+    return maximum
   }
 
   return createPosition(top, offsetPx, rowHeightPx)
@@ -159,6 +182,8 @@ const FRACTION_SCALE = 1_000_000_000n
 export function positionAtFraction(
   fraction: number,
   visibleRows: number,
+  endOffsetPx = 0,
+  rowHeightPx?: number,
 ): FeedPosition {
   if (!Number.isFinite(fraction)) {
     throw new RangeError('Fraction must be a finite number')
@@ -167,6 +192,10 @@ export function positionAtFraction(
   const clamped = fraction < 0 ? 0 : fraction > 1 ? 1 : fraction
   const maxTop = maxTopIndex(visibleRows)
   const scaled = BigInt(Math.round(clamped * Number(FRACTION_SCALE)))
+
+  if (clamped === 1) {
+    return maximumPosition(visibleRows, endOffsetPx, rowHeightPx)
+  }
 
   return createPosition((maxTop * scaled) / FRACTION_SCALE, 0)
 }
@@ -183,7 +212,8 @@ export function fractionAtPosition(
   }
 
   // A position past the end clamp (e.g. before the viewport is measured)
-  // still maps onto the rail.
+  // still maps onto the rail. The final sub-row interval intentionally shares
+  // 100%: it is far below the rail's floating-point/pixel resolution.
   const top = position.topIndex > maxTop ? maxTop : position.topIndex
   const scaled = (top * FRACTION_SCALE) / maxTop
 
@@ -210,6 +240,7 @@ export function interpolatePosition(
   t: number,
   rowHeightPx: number,
   visibleRows: number,
+  endOffsetPx = 0,
 ): FeedPosition {
   if (!Number.isFinite(t)) {
     throw new RangeError('Progress must be a finite number')
@@ -234,7 +265,13 @@ export function interpolatePosition(
   if (span < maxSafeRows && span > -maxSafeRows) {
     const spanPx = Number(span) * rowHeightPx + (to.offsetPx - from.offsetPx)
 
-    return advancePosition(from, spanPx * t, rowHeightPx, visibleRows)
+    return advancePosition(
+      from,
+      spanPx * t,
+      rowHeightPx,
+      visibleRows,
+      endOffsetPx,
+    )
   }
 
   // Astronomical span: interpolate the index at fixed granularity and clamp

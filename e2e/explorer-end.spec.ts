@@ -3,8 +3,8 @@ import { expect, test, type Page } from '@playwright/test'
 /**
  * The last public deck number is 52! (one-based). The explorer must let a
  * visitor scroll all the way to it — and back out. This behavior is emergent
- * (browser scroll physics × virtualization math), so it is verified end to
- * end. Regression guard for the "12 decks short" dead end.
+ * (browser input delivery and layout × virtualization math), so it is verified
+ * end to end. Regression guard for the "12 decks short" dead end.
  */
 const LAST_DECK =
   '80,658,175,170,943,878,571,660,636,856,403,766,975,289,505,440,883,277,824,000,000,000,000'
@@ -129,8 +129,8 @@ test.describe('explorer end of space', () => {
     // short and deterministic. `deck` is the one-based public number.
     await page.goto(`/?deck=${NEAR_END_INDEX}`)
 
-    const scroller = page.locator('.explorer-feed')
-    await expect(scroller).toBeVisible()
+    const feed = page.locator('.explorer-feed')
+    await expect(feed).toBeVisible()
 
     // Scroll down until the last deck is rendered.
     await scrollUntil(page, 400, async () => {

@@ -71,7 +71,6 @@ test.describe('explorer animated navigation', () => {
     await page.emulateMedia({ reducedMotion: 'reduce' })
     await page.goto('/')
     const feed = page.locator('.explorer-feed')
-    await expect(feed).toBeVisible()
 
     await page.locator('.jump .end-button').click()
 
@@ -101,7 +100,6 @@ test.describe('explorer animated navigation', () => {
   }) => {
     await page.goto('/')
     const feed = page.locator('.explorer-feed')
-    await expect(feed).toBeVisible()
 
     // Protocol round-trips in a busy page can outlast the 300ms animation, so
     // the cancelling wheel is dispatched in-page: a one-shot observer fires it
@@ -135,8 +133,9 @@ test.describe('explorer animated navigation', () => {
     // Start a glide across the whole space; the observer cancels it mid-way.
     await page.locator('.jump .end-button').click()
 
-    // The wheel cancelled the animation deterministically.
-    await expect(feed).toHaveAttribute('data-animating', /.*/)
+    // The wheel cancelled the animation deterministically. The running state
+    // can clear within one browser turn, so the settled position below is the
+    // durable proof that the glide did not resume.
     await expect(feed).not.toHaveAttribute('data-animating', /.*/)
 
     // The position settles where the wheel left it instead of continuing to
@@ -156,7 +155,7 @@ test.describe('explorer animated navigation', () => {
     page,
   }) => {
     test.setTimeout(60_000)
-    await page.goto('/')
+    await page.goto('/?deck=1')
     await expect(page.locator('.deck-row .deck-number').first()).toBeVisible()
 
     const feed = page.locator('.explorer-feed')
@@ -181,6 +180,20 @@ test.describe('explorer animated navigation', () => {
 
     await page.keyboard.press('Home')
     expect(await waitForSettled(page)).toBe(1n)
+  })
+
+  test('feed shortcuts do not capture deck-number editing keys', async ({
+    page,
+  }) => {
+    await page.goto('/?deck=5000000')
+    const input = page.locator('.jump input')
+    await input.focus()
+    await input.press('Home')
+    await input.press('ArrowRight')
+
+    expect(await topEdgeDeck(page)).toBe(5_000_000n)
+    await expect(input).toHaveValue('5000000')
+    expect(await input.evaluate((element) => element.selectionStart)).toBe(1)
   })
 
   test('an end jump re-clamps when the viewport resizes mid-animation', async ({
@@ -215,10 +228,42 @@ test.describe('explorer animated navigation', () => {
     expect(visibleNumbers).toContain(lastDeck)
   })
 
+  test('a settled end position stays pinned through a viewport resize', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1280, height: 900 })
+    await page.goto('/')
+    await page.locator('.jump .end-button').click()
+    await expect(page.locator('.explorer-feed')).not.toHaveAttribute(
+      'data-animating',
+      /.*/,
+    )
+
+    await page.setViewportSize({ width: 1280, height: 560 })
+    const lastDeck =
+      '80,658,175,170,943,878,571,660,636,856,403,766,975,289,505,440,883,277,824,000,000,000,000'
+    const feed = page.locator('.explorer-feed')
+    await expect
+      .poll(() =>
+        feed.evaluate((element, expected) => {
+          const viewport = element.getBoundingClientRect()
+          return [...element.querySelectorAll('.deck-row')].some((row) => {
+            const rect = row.getBoundingClientRect()
+            return (
+              rect.bottom > viewport.top &&
+              rect.top < viewport.bottom &&
+              row.querySelector('.deck-number')?.textContent === expected
+            )
+          })
+        }, lastDeck),
+      )
+      .toBe(true)
+  })
+
   test('modified wheel input remains available for browser zoom', async ({
     page,
   }) => {
-    await page.goto('/')
+    await page.goto('/?deck=1')
     const feed = page.locator('.explorer-feed')
     await feed.hover()
     const before = await topEdgeDeck(page)
