@@ -32,14 +32,15 @@ a {
 }
 
 main {
+  --page-gutter: clamp(1.25rem, 3vw, 3rem);
+
   display: grid;
   min-height: 100vh;
-  grid-template-rows: auto 1fr auto;
-  padding: clamp(1.25rem, 3vw, 3rem);
+  grid-template-rows: auto 1fr;
+  padding: var(--page-gutter);
 }
 
-.masthead,
-footer {
+.masthead {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -75,8 +76,21 @@ footer {
   text-underline-offset: 0.3em;
 }
 
-.status {
+.github-link {
+  display: grid;
+  width: 1.25rem;
+  height: 1.25rem;
+  place-items: center;
   color: #c49745;
+}
+
+.github-link:hover {
+  color: #f4ead2;
+}
+
+.github-link svg {
+  width: 100%;
+  height: 100%;
 }
 
 .hero {
@@ -123,31 +137,26 @@ h1 span {
   line-height: 1.7;
 }
 
-.introduction {
-  display: grid;
-  max-width: 55rem;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: clamp(2rem, 5vw, 6rem);
-  margin-top: clamp(2rem, 5vh, 4rem);
-  margin-left: auto;
+.home-page {
+  min-width: 0;
+}
+
+.home-hero {
+  min-height: clamp(20rem, 46vh, 28rem);
+  align-content: end;
+  padding: clamp(4rem, 9vh, 7rem) 0;
+}
+
+.home-hero h1 {
+  font-size: clamp(3.8rem, 8vw, 6rem);
+}
+
+.home-hero > p:not(.eyebrow, .count) {
+  max-width: 42rem;
+  margin: clamp(2rem, 5vh, 3.5rem) 0 0 auto;
+  color: #a8b9ae;
   font-size: clamp(1rem, 1.5vw, 1.3rem);
   line-height: 1.5;
-}
-
-.introduction p {
-  margin: 0;
-}
-
-.construction {
-  color: #a8b9ae;
-}
-
-footer {
-  color: #91ad9d;
-}
-
-footer a {
-  text-underline-offset: 0.3em;
 }
 
 .why {
@@ -397,10 +406,6 @@ footer a {
 }
 
 @media (max-width: 640px) {
-  .status {
-    display: none;
-  }
-
   h1 {
     line-height: 0.83;
   }
@@ -409,13 +414,8 @@ footer a {
     margin-left: 0;
   }
 
-  .introduction {
-    grid-template-columns: 1fr;
-  }
-
-  footer {
-    align-items: flex-start;
-    flex-direction: column;
+  .site-nav {
+    gap: 0.75rem;
   }
 }
 
@@ -436,22 +436,27 @@ footer a {
 .explorer {
   display: grid;
   grid-template-rows: auto 1fr;
-  gap: clamp(1rem, 2.5vh, 2rem);
-  width: min(100%, 110rem);
-  margin: 0 auto;
-  padding: clamp(1rem, 3vh, 2.5rem) 0;
+  width: calc(100% + var(--page-gutter) + var(--page-gutter));
+  height: 100dvh;
+  margin-left: calc(-1 * var(--page-gutter));
 }
 
 .explorer-bar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
   display: flex;
   flex-wrap: wrap;
   align-items: end;
   justify-content: space-between;
   gap: 1.25rem 2rem;
-  padding-top: clamp(1rem, 3vh, 2rem);
+  padding: clamp(0.85rem, 2vh, 1.25rem) var(--page-gutter);
+  border-bottom: 1px solid rgb(244 234 210 / 12%);
+  background: rgb(13 51 38 / 96%);
+  backdrop-filter: blur(10px);
 }
 
-.explorer-heading h1 {
+.explorer-heading h2 {
   max-width: none;
   margin: 0;
   font-size: clamp(2rem, 5vw, 3.5rem);
@@ -532,34 +537,45 @@ footer a {
   letter-spacing: 0.05em;
 }
 
-/* While the explorer is mounted the feed *is* the page: the document itself
-   does not scroll, so wheel and touch input have exactly one meaning. The
-   masthead and footer stay on screen; the feed fills the space between. */
-body.explorer-active {
-  overflow: hidden;
-}
-
 body.explorer-active main {
-  display: flex;
-  flex-direction: column;
-  height: 100dvh;
-}
-
-body.explorer-active .explorer {
-  flex: 1;
-  min-height: 0;
+  padding-bottom: 0;
 }
 
 .explorer-feed {
   position: relative;
   min-height: 0;
-  margin-bottom: clamp(1rem, 3vh, 2.5rem);
   overflow: hidden;
-  border: 1px solid rgb(244 234 210 / 12%);
-  border-radius: 0.5rem;
   background: linear-gradient(rgb(0 0 0 / 18%), rgb(0 0 0 / 18%)), #0b0e0c;
-  /* Touch drags are handled as pointer events that move the feed position. */
-  touch-action: none;
+}
+
+@media (max-width: 760px) {
+  .explorer-bar {
+    align-items: start;
+    gap: 0.75rem;
+  }
+
+  .explorer-heading h2 {
+    font-size: 1.6rem;
+  }
+
+  .explorer-heading .eyebrow,
+  .explorer-meta {
+    display: none;
+  }
+
+  .jump {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .jump label {
+    width: 100%;
+  }
+
+  .jump input {
+    width: 100%;
+    max-width: none;
+  }
 }
 
 .explorer-feed:focus-visible {

@@ -1,8 +1,8 @@
 ---
 title: Explorer-first home page with sticky controls
-status: active
+status: completed
 created: 2026-08-30
-updated: 2026-08-30
+updated: 2026-08-31
 owners:
   - human
   - opencode
@@ -56,10 +56,10 @@ None — layout change, no performance claim.
 
 # Tasks
 
-- [ ] Merge explorer into `/` with compact hero and sticky controls header.
-- [ ] Redirect `/explore` preserving `?deck=`.
-- [ ] Masthead GitHub icon; remove footer and `Foundation · 001`.
-- [ ] Update e2e specs; run all quality gates plus `pnpm test:e2e`; record evidence.
+- [x] Merge explorer into `/` with compact hero and sticky controls header.
+- [x] Redirect `/explore` preserving `?deck=`.
+- [x] Masthead GitHub icon; remove footer and `Foundation · 001`.
+- [x] Update e2e specs; run all quality gates plus `pnpm test:e2e`; record evidence.
 
 # Decisions Made
 
@@ -67,16 +67,35 @@ None — layout change, no performance claim.
 
 # Deviations
 
-None yet.
+- 2026-08-31: Decision 0009's virtual-position model remains the feed's scroll
+  authority. The compact intro uses native document scrolling, then wheel input
+  hands off to the full-page virtual feed; returning to deck 1 hands upward
+  scrolling back to the document. This replaces the framed inner pane without
+  attempting an impossible native `52!`-row scroll surface.
+- 2026-08-31: A legacy link with `?deck=` scrolls the explorer into view after
+  the replace redirect so an addressed deck remains the immediate destination.
 
 # Verification Evidence
 
-Pending.
+- 2026-08-31: `vp check` passed (104 files formatted; 48 files linted
+  without warnings or errors).
+- 2026-08-31: `pnpm typecheck` passed.
+- 2026-08-31: `vp test run` passed (12 files, 143 tests).
+- 2026-08-31: `vp build` passed (client and server bundles).
+- 2026-08-31: `pnpm test:e2e` passed (18 Chromium tests), including
+  legacy-route redirection, sticky full-page controls, document/feed wheel and
+  touch handoff, mobile-width layout, fling distance, animated navigation,
+  custom rail, and both ends of the permutation space.
 
 # Outcome
 
-Pending.
+The site now opens directly into a compact introduction followed by the
+full-page explorer. Its sticky controls and virtual feed preserve decision
+0009's exact bigint position model while removing the framed nested-pane
+presentation. Legacy `/explore?deck=N` links replace-redirect to `/?deck=N`,
+the footer and decorative status are gone, and source access lives in the
+masthead GitHub icon.
 
 # Related Commits
 
-Pending.
+- `feat(home): make explorer the home page`

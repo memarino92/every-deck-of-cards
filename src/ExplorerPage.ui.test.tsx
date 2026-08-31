@@ -7,7 +7,7 @@ import { unrankBatch } from '@/worker/batch.ts'
 import type { BatchRequest, BatchResponse } from '@/worker/explorer.worker.ts'
 
 // The router provides useSearchParams; render the page inside a memory-history
-// router primed to /explore so the explorer mounts the way it does in production.
+// router primed to / so the explorer mounts the way it does in production.
 import { createRouter, memoryHistory } from '@solidjs/router'
 import { cleanup } from '@solidjs/testing-library'
 
@@ -52,8 +52,8 @@ class FakeWorker {
 
 function renderExplorer(): void {
   const Router = createRouter({
-    routes: [{ path: '/explore', component: ExplorerPage }],
-    history: memoryHistory('/explore'),
+    routes: [{ path: '/', component: ExplorerPage }],
+    history: memoryHistory('/'),
   })
 
   render(() => <Router>{(props) => props.children}</Router>)

@@ -64,7 +64,7 @@ test.describe('explorer end of space', () => {
   test('jumping to the last deck number shows it on screen', async ({
     page,
   }) => {
-    await page.goto('/explore')
+    await page.goto('/')
 
     const input = page.locator('.jump input')
     await input.fill(LAST_DECK_PLAIN)
@@ -79,7 +79,7 @@ test.describe('explorer end of space', () => {
   test('the comma-grouped last deck number pastes into the input', async ({
     page,
   }) => {
-    await page.goto('/explore')
+    await page.goto('/')
 
     // The site displays deck numbers comma-grouped; pasting that string back
     // into the jump box must work.
@@ -95,7 +95,7 @@ test.describe('explorer end of space', () => {
   test('the go-to-end button fills the input and shows the last deck', async ({
     page,
   }) => {
-    await page.goto('/explore')
+    await page.goto('/')
 
     await page.locator('.jump .end-button').click()
 
@@ -110,7 +110,7 @@ test.describe('explorer end of space', () => {
 
   test('the go-to-start button returns to deck 1', async ({ page }) => {
     // Start somewhere deep in the space so the trip back is observable.
-    await page.goto(`/explore?deck=${NEAR_END_INDEX}`)
+    await page.goto(`/?deck=${NEAR_END_INDEX}`)
 
     await page.locator('.jump .start-button').click()
 
@@ -127,7 +127,7 @@ test.describe('explorer end of space', () => {
 
     // Load a few thousand decks before the end so the scroll to the end is
     // short and deterministic. `deck` is the one-based public number.
-    await page.goto(`/explore?deck=${NEAR_END_INDEX}`)
+    await page.goto(`/?deck=${NEAR_END_INDEX}`)
 
     const scroller = page.locator('.explorer-feed')
     await expect(scroller).toBeVisible()
