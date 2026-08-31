@@ -1,7 +1,7 @@
 import { fileURLToPath } from 'node:url'
 
 import solid from '@solidjs/vite-plugin'
-import { defineConfig } from 'vitest/config'
+import { defineConfig } from 'vite-plus'
 
 export default defineConfig({
   // solid:false disables HMR/solid-refresh, which breaks under vitest's SSR

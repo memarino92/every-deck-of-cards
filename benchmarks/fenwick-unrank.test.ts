@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vite-plus/test'
 
 import { CANONICAL_DECK } from '../src/domain/cards.ts'
 import { DECK_COUNT } from '../src/domain/deck-number.ts'

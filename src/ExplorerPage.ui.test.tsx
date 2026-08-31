@@ -1,5 +1,5 @@
 import { render, screen, waitFor } from '@solidjs/testing-library'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 
 import { CARD_COUNT } from '@/domain/cards.ts'
 import { unrankBatch } from '@/worker/batch.ts'
