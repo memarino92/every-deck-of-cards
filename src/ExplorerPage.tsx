@@ -7,6 +7,7 @@ import {
   onSettled,
   untrack,
 } from 'solid-js'
+import type { JSX } from '@solidjs/web'
 
 import { CARD_COUNT, type CardId } from './domain/cards.ts'
 import {
@@ -26,6 +27,7 @@ import {
   fractionAtPosition,
   interpolatePosition,
   LAST_INDEX,
+  maxTopIndex,
   positionAtFraction,
   stripRange,
   visibleRowCount,
@@ -115,20 +117,25 @@ function DeckRow(props: DeckRowProps) {
 
 /**
  * The explorer holds its scroll position as application state (decision
- * 0009): `position` names the deck under the viewport's top edge plus a
+ * 0009): `position` names the deck under the feed's top edge plus a
  * sub-row pixel offset. Wheel, keyboard, touch-drag, and the custom
  * scrollbar rail all advance the position directly, so input never waits on
  * the worker; only card faces load asynchronously. Programmatic navigation
  * (Jump, Random, Go to start/end) animates the position with
  * `requestAnimationFrame` and always lands exactly on the requested deck.
  */
-export function ExplorerPage() {
+interface ExplorerPageProps {
+  readonly intro?: JSX.Element
+}
+
+export function ExplorerPage(props: ExplorerPageProps = {}) {
   const [searchParams, setSearchParams] = useSearchParams()
   // Read once at mount: the requested deck seeds the position; later `deck`
   // param changes come from this page's own navigations, not back at it.
-  const requestedIndex = untrack(() => {
-    return parseDeckNumberParam(firstSearchParam(searchParams['deck']))
-  })
+  const requestedDeckParam = untrack(() =>
+    firstSearchParam(searchParams['deck']),
+  )
+  const requestedIndex = parseDeckNumberParam(requestedDeckParam)
 
   const [position, setPosition] = createSignal<FeedPosition>(
     createPosition(requestedIndex, 0),
@@ -140,18 +147,25 @@ export function ExplorerPage() {
   const [jumpValue, setJumpValue] = createSignal(
     permutationIndexToPublicDeckNumber(requestedIndex).toString(),
   )
+  const [introHeight, setIntroHeight] = createSignal(0)
+  const [introOffset, setIntroOffset] = createSignal(0)
+  const [barHeight, setBarHeight] = createSignal(0)
+  const [surfaceHeight, setSurfaceHeight] = createSignal(0)
 
-  let feedEl: HTMLElement | undefined
   let explorerEl: HTMLElement | undefined
+  let introEl: HTMLDivElement | undefined
+  let barEl: HTMLElement | undefined
   let railEl: HTMLDivElement | undefined
   let thumbEl: HTMLDivElement | undefined
-  let documentBottom = 0
 
-  const assignFeedEl = (element: HTMLElement): void => {
-    feedEl = element
-  }
   const assignExplorerEl = (element: HTMLElement): void => {
     explorerEl = element
+  }
+  const assignIntroEl = (element: HTMLDivElement): void => {
+    introEl = element
+  }
+  const assignBarEl = (element: HTMLElement): void => {
+    barEl = element
   }
   const assignRailEl = (element: HTMLDivElement): void => {
     railEl = element
@@ -171,6 +185,11 @@ export function ExplorerPage() {
   const visibleRows = createMemo(() =>
     visibleRowCount(viewportHeight(), ROW_HEIGHT),
   )
+  // Clip the first end row by the viewport remainder so 52! sits flush with
+  // the bottom without leaving blank space.
+  const endOffset = createMemo(() =>
+    viewportHeight() <= 0 ? 0 : visibleRows() * ROW_HEIGHT - viewportHeight(),
+  )
   const strip = createMemo(() =>
     stripRange(position(), viewportHeight(), ROW_HEIGHT, OVERSCAN_ROWS),
   )
@@ -180,7 +199,8 @@ export function ExplorerPage() {
   const stripStart = createMemo(() => strip().start)
   const stripCount = createMemo(() => strip().count)
   const rowIndices = createMemo<readonly bigint[]>(() => {
-    const { start, count } = strip()
+    const start = stripStart()
+    const count = stripCount()
     const indices: bigint[] = []
 
     for (let row = 0; row < count; row += 1) {
@@ -191,6 +211,16 @@ export function ExplorerPage() {
   })
   const thumbTopPercent = createMemo(
     () => fractionAtPosition(position(), visibleRows()) * 100,
+  )
+  const feedTop = createMemo(
+    () => Math.max(0, introHeight() - introOffset()) + barHeight(),
+  )
+
+  createEffect(
+    () => [surfaceHeight(), feedTop()] as const,
+    ([surface, top]) => {
+      setViewportHeight(Math.max(0, surface - top))
+    },
   )
 
   // Fold a worker response into the card cache. Entries are keyed by deck
@@ -266,11 +296,17 @@ export function ExplorerPage() {
   function animateTo(target: FeedPosition): void {
     cancelAnimation()
 
-    const currentTarget = (): FeedPosition =>
-      clampPosition(
+    const currentTarget = (): FeedPosition => {
+      const height = viewportHeight()
+      const rows = visibleRowCount(height, ROW_HEIGHT)
+
+      return clampPosition(
         target,
-        visibleRowCount(feedEl?.clientHeight ?? viewportHeight(), ROW_HEIGHT),
+        rows,
+        height <= 0 ? 0 : rows * ROW_HEIGHT - height,
+        ROW_HEIGHT,
       )
+    }
 
     if (prefersReducedMotion() || typeof requestAnimationFrame !== 'function') {
       setPosition(currentTarget())
@@ -298,6 +334,7 @@ export function ExplorerPage() {
           easeInOutCubic(t),
           ROW_HEIGHT,
           visibleRows(),
+          endOffset(),
         ),
       )
       animationFrame = requestAnimationFrame(step)
@@ -315,6 +352,7 @@ export function ExplorerPage() {
     const currentParam = firstSearchParam(searchParams['deck'])
 
     setJumpValue(deckParam)
+    setIntroOffset(introHeight())
     ownDeckParam = currentParam === deckParam ? undefined : deckParam
     setSearchParams({ deck: deckParam })
     animateTo(createPosition(deckIndex, 0))
@@ -367,26 +405,79 @@ export function ExplorerPage() {
 
   // --- Direct input: wheel, keyboard, touch drag, rail ---------------------
 
-  // Wheel input over the feed advances the virtual position. Browser zoom
-  // gestures stay native rather than being consumed as deck scrolling.
-  function documentOwnsScroll(deltaY: number): boolean {
-    const atStart = position().topIndex === 0n && position().offsetPx === 0
-
-    return (
-      !animating() &&
-      ((deltaY > 0 && globalThis.scrollY < documentBottom - 1) ||
-        (deltaY < 0 && atStart && globalThis.scrollY > 0))
-    )
-  }
-
-  function handleWheel(event: WheelEvent): void {
-    if (event.ctrlKey || event.metaKey) {
+  /** Advance through the finite intro and then the astronomical deck space. */
+  function advanceSurface(deltaPx: number): void {
+    if (deltaPx === 0) {
       return
     }
 
-    // Let the document carry the visitor through the intro before the virtual
-    // feed takes over, and back to it once the feed returns to deck 1.
-    if (documentOwnsScroll(event.deltaY)) {
+    if (deltaPx > 0) {
+      const introRemaining = introHeight() - introOffset()
+      const introDelta = Math.min(deltaPx, introRemaining)
+
+      if (introDelta > 0) {
+        setIntroOffset((current) => current + introDelta)
+      }
+
+      const feedDelta = deltaPx - introDelta
+      if (feedDelta > 0) {
+        setPosition((current) =>
+          advancePosition(
+            current,
+            feedDelta,
+            ROW_HEIGHT,
+            visibleRows(),
+            endOffset(),
+          ),
+        )
+      }
+      return
+    }
+
+    const requestedPx = -deltaPx
+    const current = position()
+    const requestedRows = Math.floor(requestedPx / ROW_HEIGHT)
+
+    if (!Number.isSafeInteger(requestedRows)) {
+      setPosition(createPosition(0n, 0))
+      setIntroOffset(0)
+      return
+    }
+
+    const requestedRowsBig = BigInt(requestedRows)
+    const requestedRemainder = requestedPx - requestedRows * ROW_HEIGHT
+    const crossesFeedStart =
+      requestedRowsBig > current.topIndex ||
+      (requestedRowsBig === current.topIndex &&
+        requestedRemainder > current.offsetPx)
+
+    if (crossesFeedStart) {
+      const remainingRows = requestedRowsBig - current.topIndex
+      const introDelta =
+        Number(remainingRows) * ROW_HEIGHT +
+        requestedRemainder -
+        current.offsetPx
+
+      setPosition(createPosition(0n, 0))
+      setIntroOffset((offset) => Math.max(0, offset - introDelta))
+      return
+    }
+
+    setPosition((nextPosition) =>
+      advancePosition(
+        nextPosition,
+        deltaPx,
+        ROW_HEIGHT,
+        visibleRows(),
+        endOffset(),
+      ),
+    )
+  }
+
+  // Wheel input anywhere on the home surface advances the unified position.
+  // Browser zoom gestures remain native rather than being consumed.
+  function handleWheel(event: WheelEvent): void {
+    if (event.ctrlKey || event.metaKey) {
       return
     }
 
@@ -400,12 +491,18 @@ export function ExplorerPage() {
           ? Math.max(viewportHeight(), ROW_HEIGHT)
           : 1
 
-    setPosition((current) =>
-      advancePosition(current, event.deltaY * scale, ROW_HEIGHT, visibleRows()),
-    )
+    advanceSurface(event.deltaY * scale)
   }
 
   function handleKeyDown(event: KeyboardEvent): void {
+    if (
+      event.target instanceof HTMLElement &&
+      (event.target.isContentEditable ||
+        event.target.matches('a, button, input, select, textarea'))
+    ) {
+      return
+    }
+
     const advanceBy: Partial<Record<string, number>> = {
       ArrowDown: ROW_HEIGHT,
       ArrowUp: -ROW_HEIGHT,
@@ -416,11 +513,20 @@ export function ExplorerPage() {
     if (event.key === 'Home' || event.key === 'End') {
       event.preventDefault()
       cancelAnimation()
-      const top =
-        event.key === 'Home'
-          ? createPosition(0n, 0)
-          : clampPosition(createPosition(LAST_INDEX, 0), visibleRows())
-      setPosition(top)
+      if (event.key === 'Home') {
+        setPosition(createPosition(0n, 0))
+        setIntroOffset(0)
+      } else {
+        setIntroOffset(introHeight())
+        setPosition(
+          clampPosition(
+            createPosition(LAST_INDEX, 0),
+            visibleRows(),
+            endOffset(),
+            ROW_HEIGHT,
+          ),
+        )
+      }
       return
     }
 
@@ -432,14 +538,11 @@ export function ExplorerPage() {
 
     event.preventDefault()
     cancelAnimation()
-    setPosition((current) =>
-      advancePosition(current, delta, ROW_HEIGHT, visibleRows()),
-    )
+    advanceSurface(delta)
   }
 
-  // Touch dragging pans the virtual position once the document reaches the
-  // feed. At deck 1, downward dragging returns control to the document so the
-  // intro remains reachable.
+  // Touch dragging advances the same unified intro/deck position as wheel and
+  // keyboard input. Multi-touch remains native for browser zoom gestures.
   let touchDragY: number | undefined
   let touchDragIdentifier: number | undefined
 
@@ -470,15 +573,9 @@ export function ExplorerPage() {
     const delta = touchDragY - currentY
     touchDragY = currentY
 
-    if (documentOwnsScroll(delta)) {
-      return
-    }
-
     event.preventDefault()
     cancelAnimation()
-    setPosition((current) =>
-      advancePosition(current, delta, ROW_HEIGHT, visibleRows()),
-    )
+    advanceSurface(delta)
   }
 
   function endTouchDrag(): void {
@@ -493,16 +590,24 @@ export function ExplorerPage() {
   // to (or past) an end lands exactly on the first or last scrollable deck.
   let railDragging = false
   let railGrabOffset = 0
+  let railTop = 0
+  let railTravel = 1
 
-  function railFraction(clientY: number): number {
+  function updateRailGeometry(): void {
     if (railEl === undefined || thumbEl === undefined) {
-      return 0
+      return
     }
 
     const railRect = railEl.getBoundingClientRect()
-    const thumbHeight = thumbEl.getBoundingClientRect().height
-    const travel = Math.max(1, railRect.height - thumbHeight)
-    const fraction = (clientY - railRect.top - railGrabOffset) / travel
+    railTop = railRect.top
+    railTravel = Math.max(
+      1,
+      railRect.height - thumbEl.getBoundingClientRect().height,
+    )
+  }
+
+  function railFraction(clientY: number): number {
+    const fraction = (clientY - railTop - railGrabOffset) / railTravel
 
     return fraction < 0 ? 0 : fraction > 1 ? 1 : fraction
   }
@@ -517,12 +622,18 @@ export function ExplorerPage() {
     railDragging = true
     railEl.setPointerCapture(event.pointerId)
 
+    const thumbRect = thumbEl.getBoundingClientRect()
+    updateRailGeometry()
     railGrabOffset =
       event.target === thumbEl
-        ? event.clientY - thumbEl.getBoundingClientRect().top
-        : thumbEl.getBoundingClientRect().height / 2
+        ? event.clientY - thumbRect.top
+        : thumbRect.height / 2
 
-    setPosition(positionAtFraction(railFraction(event.clientY), visibleRows()))
+    const fraction = railFraction(event.clientY)
+    setIntroOffset(fraction === 0 ? 0 : introHeight())
+    setPosition(
+      positionAtFraction(fraction, visibleRows(), endOffset(), ROW_HEIGHT),
+    )
   }
 
   function handleRailPointerMove(event: PointerEvent): void {
@@ -530,7 +641,11 @@ export function ExplorerPage() {
       return
     }
 
-    setPosition(positionAtFraction(railFraction(event.clientY), visibleRows()))
+    const fraction = railFraction(event.clientY)
+    setIntroOffset(fraction === 0 ? 0 : introHeight())
+    setPosition(
+      positionAtFraction(fraction, visibleRows(), endOffset(), ROW_HEIGHT),
+    )
   }
 
   function endRailDrag(): void {
@@ -539,52 +654,75 @@ export function ExplorerPage() {
 
   // --- Setup ---------------------------------------------------------------
 
-  // Runs once when the component settles (Solid 2's mount-with-cleanup hook;
-  // the returned function fires on disposal). Normal document scrolling
-  // carries the compact intro away; the full-page feed then owns virtual input.
+  // The home surface is the only scroll owner. The browser document stays
+  // fixed while wheel and touch move the intro and virtual feed as one stream.
   onSettled(() => {
     document.body.classList.add('explorer-active')
-    feedEl?.addEventListener('wheel', handleWheel, { passive: false })
-    feedEl?.addEventListener('touchmove', handleFeedTouchMove, {
+    explorerEl?.addEventListener('wheel', handleWheel, {
+      passive: false,
+      capture: true,
+    })
+    explorerEl?.addEventListener('touchmove', handleFeedTouchMove, {
       passive: false,
     })
-
-    const updateDocumentBottom = (): void => {
-      documentBottom = Math.max(
-        0,
-        document.documentElement.scrollHeight - globalThis.innerHeight,
-      )
-    }
-    updateDocumentBottom()
-    globalThis.addEventListener('resize', updateDocumentBottom)
-
-    if (firstSearchParam(searchParams['deck']) !== undefined) {
-      explorerEl?.scrollIntoView()
-    }
+    globalThis.addEventListener('resize', updateRailGeometry)
 
     let observer: ResizeObserver | undefined
 
-    if (feedEl !== undefined) {
-      setViewportHeight(feedEl.clientHeight)
+    if (
+      explorerEl !== undefined &&
+      introEl !== undefined &&
+      barEl !== undefined
+    ) {
+      setSurfaceHeight(explorerEl.clientHeight)
+      setIntroHeight(introEl.clientHeight)
+      setBarHeight(barEl.getBoundingClientRect().height)
+      if (requestedDeckParam !== undefined) {
+        setIntroOffset(introEl.clientHeight)
+      }
 
       if (typeof ResizeObserver === 'function') {
         observer = new ResizeObserver((entries) => {
-          const entry = entries[0]
+          const measurements = entries.map((entry) => ({
+            target: entry.target,
+            height:
+              entry.borderBoxSize[0]?.blockSize ??
+              (entry.target as HTMLElement).getBoundingClientRect().height,
+          }))
 
-          if (entry !== undefined) {
-            setViewportHeight(entry.contentRect.height)
-            updateDocumentBottom()
-          }
+          queueMicrotask(() => {
+            for (const measurement of measurements) {
+              if (measurement.target === explorerEl) {
+                setSurfaceHeight(measurement.height)
+              } else if (measurement.target === barEl) {
+                setBarHeight(measurement.height)
+              } else if (measurement.target === introEl) {
+                const staticPreviousHeight = introHeight()
+
+                setIntroHeight(measurement.height)
+                setIntroOffset((current) => {
+                  const shouldRemainHidden =
+                    staticPreviousHeight > 0 && current >= staticPreviousHeight
+
+                  return requestedDeckParam !== undefined || shouldRemainHidden
+                    ? measurement.height
+                    : Math.min(current, measurement.height)
+                })
+              }
+            }
+          })
         })
-        observer.observe(feedEl)
+        observer.observe(explorerEl)
+        observer.observe(introEl)
+        observer.observe(barEl)
       }
     }
 
     return () => {
       document.body.classList.remove('explorer-active')
-      feedEl?.removeEventListener('wheel', handleWheel)
-      feedEl?.removeEventListener('touchmove', handleFeedTouchMove)
-      globalThis.removeEventListener('resize', updateDocumentBottom)
+      explorerEl?.removeEventListener('wheel', handleWheel, { capture: true })
+      explorerEl?.removeEventListener('touchmove', handleFeedTouchMove)
+      globalThis.removeEventListener('resize', updateRailGeometry)
       observer?.disconnect()
       cancelAnimation()
     }
@@ -593,10 +731,28 @@ export function ExplorerPage() {
   // Once the viewport is measured (and whenever it resizes), keep the
   // position inside the scrollable range — this is what pins a `?deck=`
   // link to the last deck into the final viewport instead of past it.
+  let previousVisibleRows = 0
+  let previousEndOffset = 0
   createEffect(
-    () => visibleRows(),
-    (rows) => {
-      setPosition((current) => clampPosition(current, rows))
+    () => [visibleRows(), endOffset()] as const,
+    ([rows, offset]) => {
+      setPosition((current) => {
+        const wasAtEnd =
+          previousVisibleRows > 0 &&
+          current.topIndex === maxTopIndex(previousVisibleRows) &&
+          current.offsetPx === previousEndOffset
+
+        return wasAtEnd
+          ? clampPosition(
+              createPosition(LAST_INDEX, 0),
+              rows,
+              offset,
+              ROW_HEIGHT,
+            )
+          : clampPosition(current, rows, offset, ROW_HEIGHT)
+      })
+      previousVisibleRows = rows
+      previousEndOffset = offset
     },
   )
 
@@ -613,12 +769,38 @@ export function ExplorerPage() {
   })
 
   return (
+    // The section is the keyboard-operable custom scroll surface.
+    // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
     <section
       ref={assignExplorerEl}
       class="explorer"
-      aria-labelledby="explorer-title"
+      aria-labelledby={
+        props.intro === undefined ? 'explorer-title' : 'hero-title'
+      }
+      // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
+      tabindex="0"
+      data-intro-visible={introOffset() < introHeight() || undefined}
+      onKeyDown={handleKeyDown}
+      onTouchStart={handleFeedTouchStart}
+      onTouchEnd={endTouchDrag}
+      onTouchCancel={endTouchDrag}
     >
-      <header class="explorer-bar">
+      <div
+        ref={assignIntroEl}
+        class="explorer-intro"
+        style={{ transform: `translateY(-${introOffset()}px)` }}
+      >
+        {props.intro}
+      </div>
+
+      <header
+        ref={assignBarEl}
+        class="explorer-bar"
+        style={{
+          top: `${introHeight()}px`,
+          transform: `translateY(-${introOffset()}px)`,
+        }}
+      >
         <div class="explorer-heading">
           <p class="eyebrow">The explorer</p>
           <h2 id="explorer-title">Every deck, in order.</h2>
@@ -657,21 +839,15 @@ export function ExplorerPage() {
         </p>
       </header>
 
-      {/* The feed is a keyboard-operable scroll viewport: focusable, with
-          arrow/page/Home/End scrolling — the accessible pattern for a custom
-          scroll region, which the a11y rule tables do not model. */}
-      {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions */}
+      {/* The feed remains focusable so keyboard input bubbles to the custom
+          scroll surface while interactive controls retain their native keys. */}
       <section
-        ref={assignFeedEl}
         class="explorer-feed"
         // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
         tabindex="0"
         aria-label="Deck feed: every deck, in order"
         data-animating={animating() || undefined}
-        onKeyDown={handleKeyDown}
-        onTouchStart={handleFeedTouchStart}
-        onTouchEnd={endTouchDrag}
-        onTouchCancel={endTouchDrag}
+        style={{ top: `${feedTop()}px` }}
       >
         <div
           class="explorer-strip"
@@ -683,28 +859,28 @@ export function ExplorerPage() {
             )}
           </For>
         </div>
-
-        <div
-          ref={assignRailEl}
-          class="explorer-rail"
-          // The rail is a pointer affordance; keyboard scrolling lives on the
-          // feed itself and exact addressing lives in the jump form.
-          aria-hidden="true"
-          onPointerDown={handleRailPointerDown}
-          onPointerMove={handleRailPointerMove}
-          onPointerUp={endRailDrag}
-          onPointerCancel={endRailDrag}
-        >
-          <div
-            ref={assignThumbEl}
-            class="explorer-rail-thumb"
-            style={{
-              top: `${thumbTopPercent()}%`,
-              transform: `translateY(-${thumbTopPercent()}%)`,
-            }}
-          />
-        </div>
       </section>
+
+      <div
+        ref={assignRailEl}
+        class="explorer-rail"
+        // The rail is a pointer affordance; keyboard scrolling lives on the
+        // feed itself and exact addressing lives in the jump form.
+        aria-hidden="true"
+        onPointerDown={handleRailPointerDown}
+        onPointerMove={handleRailPointerMove}
+        onPointerUp={endRailDrag}
+        onPointerCancel={endRailDrag}
+      >
+        <div
+          ref={assignThumbEl}
+          class="explorer-rail-thumb"
+          style={{
+            top: `${thumbTopPercent()}%`,
+            transform: `translateY(-${thumbTopPercent()}%)`,
+          }}
+        />
+      </div>
     </section>
   )
 }

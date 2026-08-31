@@ -9,7 +9,7 @@ The site currently opens on a static hero page (`/`) that links to the explorer 
 
 ## Decision
 
-The explorer is the home page. `/` renders a compact hero (wordmark-scale heading, short tagline, the 52! count) that scrolls away with the feed; the explorer controls (deck-number input, Jump, Random, Go to start/end) live in a sticky header that remains pinned while the feed scrolls. `/explore` becomes a redirect to `/` that preserves the `?deck=` parameter contract established in decision 0007. The footer is removed; a GitHub icon link replaces the decorative `Foundation · 001` status text in the masthead's top-right corner.
+The explorer is the home page. `/` renders a compact hero (wordmark-scale heading, short tagline, the 52! count) that scrolls away within the same viewport-owned surface as the feed; native document scrolling is disabled. The explorer controls (deck-number input, Jump, Random, Go to start/end) remain pinned once the hero clears. `/explore` becomes a redirect to `/` that preserves the `?deck=` parameter contract established in decision 0007. The footer is removed; a GitHub icon link replaces the decorative `Foundation · 001` status text in the masthead's top-right corner.
 
 ## Alternatives Considered
 
@@ -20,12 +20,12 @@ The explorer is the home page. `/` renders a compact hero (wordmark-scale headin
 ## Consequences
 
 - Shareable `?deck=` links keep working through the redirect; any spec or doc referencing `/explore` is updated in the same change.
-- The deck editor and any future pages build against the sticky-header layout.
+- The deck editor and any future pages build against the pinned-controls layout.
 - Independent of the scroll-model decision (0009): this decides _where_ the explorer lives and its chrome; 0009 decides _how_ it scrolls.
 
 ## Evidence
 
-- `e2e/explorer-home.spec.ts` verifies the legacy redirect, sticky controls,
+- `e2e/explorer-home.spec.ts` verifies the legacy redirect, pinned controls,
   masthead GitHub link, footer removal, and full-page feed behavior.
 - The complete Playwright explorer suite verifies that the existing
   virtual-position scroll, rail, navigation, and end-of-space behavior remains

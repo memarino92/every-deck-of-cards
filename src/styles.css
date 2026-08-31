@@ -138,10 +138,13 @@ h1 span {
 }
 
 .home-page {
+  height: 100%;
   min-width: 0;
+  min-height: 0;
 }
 
 .home-hero {
+  width: min(calc(100% - var(--page-gutter) - var(--page-gutter)), 90rem);
   min-height: clamp(20rem, 46vh, 28rem);
   align-content: end;
   padding: clamp(4rem, 9vh, 7rem) 0;
@@ -434,16 +437,31 @@ h1 span {
    ------------------------------------------------------------------------- */
 
 .explorer {
-  display: grid;
-  grid-template-rows: auto 1fr;
+  position: relative;
   width: calc(100% + var(--page-gutter) + var(--page-gutter));
-  height: 100dvh;
+  height: 100%;
   margin-left: calc(-1 * var(--page-gutter));
+  overflow: hidden;
+  touch-action: pinch-zoom;
+}
+
+.explorer:focus-visible {
+  outline: 2px solid #d6aa5d;
+  outline-offset: -2px;
+}
+
+.explorer-intro {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  will-change: transform;
 }
 
 .explorer-bar {
-  position: sticky;
-  top: 0;
+  position: absolute;
+  right: 0;
+  left: 0;
   z-index: 100;
   display: flex;
   flex-wrap: wrap;
@@ -454,6 +472,7 @@ h1 span {
   border-bottom: 1px solid rgb(244 234 210 / 12%);
   background: rgb(13 51 38 / 96%);
   backdrop-filter: blur(10px);
+  will-change: transform;
 }
 
 .explorer-heading h2 {
@@ -537,13 +556,23 @@ h1 span {
   letter-spacing: 0.05em;
 }
 
+body.explorer-active {
+  height: 100dvh;
+  overflow: hidden;
+}
+
 body.explorer-active main {
+  height: 100dvh;
+  min-height: 0;
   padding-bottom: 0;
+  overflow: hidden;
 }
 
 .explorer-feed {
-  position: relative;
-  min-height: 0;
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
   overflow: hidden;
   background: linear-gradient(rgb(0 0 0 / 18%), rgb(0 0 0 / 18%)), #0b0e0c;
 }
@@ -578,11 +607,6 @@ body.explorer-active main {
   }
 }
 
-.explorer-feed:focus-visible {
-  outline: 2px solid #d6aa5d;
-  outline-offset: -2px;
-}
-
 .explorer-strip {
   position: relative;
   will-change: transform;
@@ -597,6 +621,7 @@ body.explorer-active main {
   top: 0;
   right: 0;
   bottom: 0;
+  z-index: 110;
   width: 1.1rem;
   cursor: grab;
 }

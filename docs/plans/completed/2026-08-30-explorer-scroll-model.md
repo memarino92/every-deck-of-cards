@@ -66,7 +66,7 @@ Replace the explorer's nested scroll pane with a page-scale feed and remove the 
 # Decisions Made
 
 - **Virtual position + custom rail** won over native page scroll + recentering window. The native scrollbar can only span the physical window, so it cannot meet the end-to-end navigation requirement; the functional wheel-sequence comparison also favored applying deltas directly.
-- The position is `{ topIndex: bigint, offsetPx: number }` — the deck under the viewport's top edge plus a sub-row pixel offset — so wheel/trackpad input is lossless and deck numbers render synchronously during scroll.
+- The position is `{ topIndex: bigint, offsetPx: number }` — the deck under the feed viewport's top edge plus a sub-row pixel offset — so wheel/trackpad input is lossless and deck numbers render synchronously during scroll.
 - End-of-space semantics: the last deck pins to the bottom visible row (`maxTopIndex`); scrolling past the end is clamped there, never to void.
 - The rail maps percent-of-space to an exact position at 1e9 fixed-point granularity; the thumb keeps the pointer's grab offset within its travel range so both extremes are exactly reachable.
 - Direct input (wheel over the feed, keyboard, touch drag, rail drag) updates position without awaiting worker completion; only programmatic navigation animates.

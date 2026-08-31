@@ -75,6 +75,22 @@ describe('clampPosition', () => {
       offsetPx: 0,
     })
   })
+
+  it('uses a sub-row end offset to align the last row to the bottom', () => {
+    expect(
+      clampPosition(createPosition(LAST_INDEX, 0), VISIBLE, 40, ROW),
+    ).toEqual({
+      topIndex: MAX_TOP,
+      offsetPx: 40,
+    })
+  })
+
+  it('aligns the last deck in a viewport shorter than one row', () => {
+    expect(clampPosition(createPosition(LAST_INDEX, 0), 1, 40, ROW)).toEqual({
+      topIndex: LAST_INDEX,
+      offsetPx: 40,
+    })
+  })
 })
 
 describe('advancePosition', () => {
@@ -154,6 +170,12 @@ describe('advancePosition', () => {
     ).toEqual({ topIndex: MAX_TOP, offsetPx: 0 })
   })
 
+  it('can move upward from a sub-row end offset', () => {
+    expect(
+      advancePosition(createPosition(MAX_TOP, 40, ROW), -10, ROW, VISIBLE, 40),
+    ).toEqual({ topIndex: MAX_TOP, offsetPx: 30 })
+  })
+
   it('rejects non-finite deltas and bad row heights', () => {
     expect(() =>
       advancePosition(createPosition(0n, 0), Number.NaN, ROW, VISIBLE),
@@ -173,6 +195,13 @@ describe('rail fraction mapping', () => {
     expect(positionAtFraction(1, VISIBLE)).toEqual({
       topIndex: MAX_TOP,
       offsetPx: 0,
+    })
+  })
+
+  it('maps fraction 1 to an exact sub-row end offset', () => {
+    expect(positionAtFraction(1, VISIBLE, 40, ROW)).toEqual({
+      topIndex: MAX_TOP,
+      offsetPx: 40,
     })
   })
 
@@ -207,6 +236,12 @@ describe('rail fraction mapping', () => {
     expect(
       fractionAtPosition(createPosition(MAX_TOP / 2n, 0), VISIBLE),
     ).toBeCloseTo(0.5, 6)
+  })
+
+  it('quantizes the final sub-row interval to the rail endpoint', () => {
+    expect(fractionAtPosition(createPosition(MAX_TOP, 40, ROW), VISIBLE)).toBe(
+      1,
+    )
   })
 
   it('round-trips a dragged fraction to the same stop', () => {

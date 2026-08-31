@@ -29,7 +29,7 @@ The randomize action must honor the site's premise: the animation travels to a _
 - Decisions 0003 (factoradic), 0004 (canonical order), 0005 (sequential IDs), 0006 (randomize with visible shuffle).
 - The pure random-index domain module specified by decision 0006: uniform draw over `0..52!-1` via `crypto.getRandomValues` with rejection sampling, injectable entropy for tests.
 - Routing/navigation from the Why page and explainer plans.
-- The explorer-first home layout plan (`active/2026-08-30-explorer-first-home.md`) and the Solid 2.0 RC upgrade (`active/2026-08-30-solid-2-rc-upgrade.md`) land first. The former moves the explorer onto `/` with a sticky-controls header, so the editor's navigation entry point and any shared explorer chrome must be built against the new layout; the latter means editor UI code targets Solid 2.0 APIs.
+- The explorer-first home layout plan (`completed/2026-08-30-explorer-first-home.md`) and the Solid 2.0 RC upgrade (`completed/2026-08-30-solid-2-rc-upgrade.md`) land first. The former moves the explorer onto `/` with pinned controls, so the editor's navigation entry point and any shared explorer chrome must be built against the new layout; the latter means editor UI code targets Solid 2.0 APIs.
 
 # Proposed Changes
 
