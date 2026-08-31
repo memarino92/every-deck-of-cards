@@ -42,7 +42,7 @@ async function scrollUntil(
   deltaY: number,
   goal: () => Promise<boolean>,
 ): Promise<void> {
-  await page.locator('.explorer-scroll').hover()
+  await page.locator('.explorer-feed').hover()
 
   for (let attempt = 0; attempt < 200; attempt += 1) {
     // eslint-disable-next-line no-await-in-loop -- polling: each check depends on the prior scroll
@@ -123,7 +123,7 @@ test.describe('explorer end of space', () => {
     // short and deterministic. `deck` is the one-based public number.
     await page.goto(`/explore?deck=${NEAR_END_INDEX}`)
 
-    const scroller = page.locator('.explorer-scroll')
+    const scroller = page.locator('.explorer-feed')
     await expect(scroller).toBeVisible()
 
     // Scroll down until the last deck is rendered.
@@ -133,9 +133,9 @@ test.describe('explorer end of space', () => {
     expect((await maxVisibleDeck(page)).toString()).toBe(LAST_DECK_PLAIN)
 
     // Scrolling back up must leave the end zone (the original bug also
-    // trapped upward scroll just short of the boundary). Proving the window
-    // retreats past the pinned final window (LAST - physicalRowCount) is
-    // enough to show it is not stuck at the end.
+    // trapped upward scroll just short of the boundary). Proving the feed
+    // retreats well past the pinned end position (top deck = last deck minus
+    // one viewport) is enough to show it is not stuck at the end.
     const endWindowTop = BigInt(LAST_DECK_PLAIN) - 24n
     await scrollUntil(page, -400, async () => {
       return (await minVisibleDeck(page)) < endWindowTop
