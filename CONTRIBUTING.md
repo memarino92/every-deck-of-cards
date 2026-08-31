@@ -2,7 +2,9 @@
 
 ## Setup
 
-Use Node.js 24 or newer and the pnpm version declared in `package.json`.
+Use Node.js 24 or newer and the pnpm version declared in `package.json`. The
+toolchain is Vite+ (the `vp` CLI); install it per https://vite.plus and ensure
+it is on `PATH`.
 
 ```sh
 pnpm install --frozen-lockfile
@@ -11,15 +13,18 @@ pnpm dev
 
 ## Before Submitting Changes
 
-Run:
+Run (`vp check` is Oxfmt format + Oxlint lint; `tsc --noEmit` is stricter and
+stays a separate step):
 
 ```sh
-pnpm format:check
-pnpm lint
+vp check
 pnpm typecheck
-pnpm test
-pnpm build
+vp test run
+vp build
 ```
+
+The package.json equivalents (`pnpm format:check`, `pnpm lint`,
+`pnpm typecheck`, `pnpm test`, `pnpm build`) run the same tools.
 
 If your change touches scrolling, virtualization, or other behavior that is
 emergent between the browser and the app, also run the end-to-end suite

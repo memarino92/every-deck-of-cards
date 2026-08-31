@@ -30,23 +30,28 @@ jobs:
           cache: pnpm
           node-version: 24
 
+      - name: Set up Vite+
+        uses: voidzero-dev/setup-vp@5af416ede120848958d85c9720e61b921ac7bca6 # v1 (vite-plus 0.3.0)
+        with:
+          # Version auto-detects from the pnpm catalog pin (0.3.0). Keep the
+          # runner's Node 24 rather than adopting vp env management.
+          node-manager: false
+          run-install: false
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Check formatting
-        run: pnpm format:check
-
-      - name: Lint
-        run: pnpm lint
+      - name: Check formatting and lint
+        run: vp check
 
       - name: Typecheck
         run: pnpm typecheck
 
       - name: Test
-        run: pnpm test
+        run: vp test run
 
       - name: Build
-        run: pnpm build
+        run: vp build
 
       - name: Install Playwright Chromium
         run: pnpm exec playwright install --with-deps chromium

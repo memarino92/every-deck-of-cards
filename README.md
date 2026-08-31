@@ -26,9 +26,7 @@ A later interactive mode will let visitors drag cards into any ordering and watc
 
 - SolidJS and strict TypeScript
 - `@solidjs/router` for client-side navigation between pages
-- Vite for the client-only application and Web Worker bundles
-- Oxlint and Prettier for static analysis and formatting
-- Vitest for domain tests and benchmarks
+- Vite+ (the `vp` CLI) unifying Vite, Vitest, Oxlint, and Oxfmt for the client-only application, Web Worker bundles, tests, and static analysis
 - Playwright for end-to-end tests of emergent browser behavior
 - Cloudflare Workers Static Assets at `everydeckof.cards` with no application Worker runtime
 - pnpm for dependency management
@@ -39,21 +37,24 @@ Requirements:
 
 - Node.js 24 or newer
 - pnpm 10.15.0
+- The Vite+ CLI (`vp`), installed per https://vite.plus and on `PATH`
 
 ```sh
 pnpm install
 pnpm dev
 ```
 
-Run all current quality gates:
+Run all current quality gates (`vp check` is Oxfmt format + Oxlint lint):
 
 ```sh
-pnpm format:check
-pnpm lint
+vp check
 pnpm typecheck
-pnpm test
-pnpm build
+vp test run
+vp build
 ```
+
+The `pnpm` package scripts (`format:check`, `lint`, `typecheck`, `test`,
+`build`) invoke the same tools.
 
 End-to-end tests run in a real browser against the dev server. They cover
 behavior that is emergent between the browser and the app (for example,
