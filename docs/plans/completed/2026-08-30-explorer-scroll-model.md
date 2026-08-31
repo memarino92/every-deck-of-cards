@@ -98,4 +98,4 @@ The explorer is a full-viewport virtual feed driven by a `bigint` position. Whee
 # Related Commits
 
 - `2b0fa32` — initial virtual-position implementation.
-- Review-hardening follow-up — branch history before pull request.
+- `5a9370d` — review hardening: live resize clamping, scoped wheel input, visible-end assertions, reproducible capture, URL history synchronization, and worker request coalescing.
