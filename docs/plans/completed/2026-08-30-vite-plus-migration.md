@@ -1,6 +1,6 @@
 ---
 title: Migrate to Vite+, adopt vite-plugin start mode, and replace Prettier with Oxfmt
-status: active
+status: completed
 created: 2026-08-30
 updated: 2026-08-30
 owners:
@@ -79,30 +79,41 @@ None required. If a build-speed claim is made later (Vite+ advertises large spee
 
 # Tasks
 
-- [ ] Install `vp`; run `vp migrate` or hand-migrate scripts and config.
-- [ ] Remove Prettier (dependency, config, ignore file); wire oxfmt.
-- [ ] Format-only commit; verify suite + e2e green.
-- [ ] Adopt start mode: `Document.tsx`, `entry-client.tsx`, `solid({ start: true })`, delete `index.html`, `wrangler.jsonc` → `dist/client`; verify per the test plan.
-- [ ] Update CI, AGENTS.md, CONTRIBUTING.md.
-- [ ] Mark decision 0011 accepted; run all quality gates and record evidence.
+- [x] Install `vp`; run `vp migrate` or hand-migrate scripts and config.
+- [x] Remove Prettier (dependency, config, ignore file); wire oxfmt.
+- [x] Format-only commit; verify suite + e2e green. (Became a no-op — see Deviations.)
+- [x] Adopt start mode: `Document.tsx`, `entry-client.tsx`, `solid({ start: true })`, delete `index.html`, `wrangler.jsonc` → `dist/client`; verify per the test plan.
+- [x] Update CI, AGENTS.md, CONTRIBUTING.md.
+- [x] Mark decision 0011 accepted; run all quality gates and record evidence.
 
 # Decisions Made
 
-- Ships independently on its own branch/PR. The reformat is a separate commit from the tooling change so behavior diffs stay reviewable.
+- Ships independently on its own branch/PR. The reformat is a separate commit from the tooling change so behavior diffs stay reviewable. (In practice the reformat produced no source diff; see Deviations.)
 - Start mode is adopted in client posture only, preserving the client-rendered static-assets invariant; it lands as its own commit, separate from both the tooling swap and the format-only commit.
 
 # Deviations
 
 - Scope grew: start-mode adoption folded in after the Solid 2.0 RC upgrade introduced `@solidjs/vite-plugin` 3.x (the rename made start mode the maintained path for document/entry ownership). Recorded here and in decision 0011.
+- **No separate format-only commit.** Oxfmt's effective default `printWidth` is 80, identical to the retired Prettier config (`semi: false`, `singleQuote: true`, width 80). The repo-wide reformat therefore produced zero source diff beyond the `vitest` → `vite-plus/test` import rewrites and a single union-type wrap in `batch.test.ts`, both of which rode along in the tooling commit. A standalone format-only commit would have been empty, so the two-commit plan collapsed to tooling + start-mode.
+- **`typeAware`/`typeCheck` lint options dropped.** `vp migrate` enabled oxlint's type-aware checking, which flagged ~40 pre-existing patterns (intentional test-boundary assertions such as `as unknown as bigint`; `process.env` in `playwright.config.ts`). To keep the migration behavior-preserving, these were removed so `vp check` matches the prior oxlint strictness. Adopting type-aware linting is a separate future decision.
+- **`lazyPlugins` not used.** The migrator wrapped plugins in `lazyPlugins`, but its `PluginOption[] | undefined` type fails `tsc --noEmit` under `exactOptionalPropertyTypes`. Plain `plugins: [...]` is used instead; `vp check` passes either way.
+- **`fmt.ignorePatterns` restored.** A re-run of `vp migrate` reset the ignore globs to `[]`; they were restored to the former `.prettierignore` contents, and `.prettierignore` was deleted (Oxfmt reads ignores from `fmt.ignorePatterns`).
+- **Dev-only `/__health` endpoint added.** Start mode's dev history fallback only answers HTML-accepting GETs; Playwright's `webServer` readiness probe sends no `Accept` header and would 404/time out. The probe now targets a plain-200 `/__health` endpoint (`playwright.config.ts`); browser tests still exercise real routes.
 
 # Verification Evidence
 
-Pending.
+- Tooling commit `e7455b9`: `vp check` (fmt + lint) pass, `vp test run` 131/131, `vp build` ok, `pnpm test:e2e` 5/5 — on the exact staged tree.
+- Start-mode commit `fb9683a`: `vp check`, `tsc --noEmit`, `vp test run` 131/131, `vp build` (emits `dist/client` with prerendered `index.html` carrying the full ported `<head>`; `favicon.svg` and `social-card.png` land from `public/`; hashed entry JS/CSS resolve), `pnpm test:e2e` 5/5.
+- `vp dev` serves `/`, `/explore`, `/why`, `/how`, `/talk` (200 with the shell for HTML-accepting GETs) and `/__health` (200 without an `Accept` header).
+- `vp preview` serves all routes from `dist/client` with history fallback; entry JS, CSS, favicon, and social-card all return 200.
+- `wrangler deploy --dry-run` reads 14 files from `dist/client`.
+- CI: `.github/workflows/ci.yml` installs Vite+ via `voidzero-dev/setup-vp` (pinned SHA, vite-plus 0.3.0 auto-detected from the pnpm catalog) with `node-manager: false` (keeps runner Node 24); gates run `vp check`, `pnpm typecheck`, `vp test run`, `vp build`, plus `pnpm test:e2e`.
 
 # Outcome
 
-Pending.
+Vite+ (vp 0.3.0) is the unified toolchain for dev/build/check/test; Prettier is replaced by Oxfmt; and `@solidjs/vite-plugin` start mode (client posture) owns the document shell (`src/Document.tsx`) and authored client entry (`src/entry-client.tsx`), with `index.html` deleted and the build emitting `dist/client`. The site remains client-rendered static assets. Decision 0011 accepted. All quality gates and the e2e suite pass; wrangler dry-run confirms the asset directory.
 
 # Related Commits
 
-Pending.
+- `e7455b9` build(tooling): migrate to the Vite+ unified toolchain
+- `fb9683a` feat(build): adopt vite-plugin start mode (client posture)

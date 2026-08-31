@@ -19,6 +19,7 @@
 - Use the latest stable ECMAScript and TypeScript features freely; this is a greenfield project with no legacy browser or runtime support burden. Prefer modern built-ins (`toReversed`, `toSorted`, `Object.groupBy`, `structuredClone`, etc.) over hand-rolled equivalents.
 - TypeScript compiles with `"lib": ["ESNext", ...]` and `"target": "ES2024"`; the Vite build targets `es2024`. Raise targets again when Vite defaults and baseline browser support move.
 - Node.js 24+ for local tooling; keep the `packageManager` pnpm version in `package.json` current.
+- The toolchain is Vite+ (the `vp` CLI): dev, build, check (Oxfmt format + Oxlint lint), and test. `vite` resolves to the Vite+ bundled build via the pnpm catalog. There is no `index.html`; the document shell is `src/Document.tsx` and the authored client entry is `src/entry-client.tsx` (vite-plugin start mode, client posture). The build emits `dist/client`.
 
 ## Workflow
 
@@ -50,15 +51,19 @@
 
 ## Verification
 
-Run before a commit:
+Run before a commit (`vp check` is Oxfmt format + Oxlint lint; typecheck is
+`tsc --noEmit` — stricter than `vp check`, so it stays a separate step):
 
 ```sh
-pnpm format:check
-pnpm lint
+vp check
 pnpm typecheck
-pnpm test
-pnpm build
+vp test run
+vp build
 ```
+
+Equivalently via package scripts: `pnpm format:check`, `pnpm lint`,
+`pnpm typecheck`, `pnpm test`, `pnpm build`. Format with `vp fmt .` (or
+`pnpm format`).
 
 When a change touches scrolling, virtualization, or other behavior that is
 emergent between the browser and the app, also run the Playwright end-to-end
@@ -72,4 +77,6 @@ The e2e suite is the oracle for emergent browser behavior; do not try to
 verify that behavior with pure-TypeScript scroll simulations, which cannot
 model real `scrollTop` clamping and event cadence.
 
-On Windows where PowerShell blocks package-manager shims, use `pnpm.cmd`.
+On Windows where PowerShell blocks package-manager shims, use `pnpm.cmd`. The
+`vp` CLI installs to `~/AppData/Local/vite-plus/bin` (per the official
+installer); ensure it is on `PATH`.

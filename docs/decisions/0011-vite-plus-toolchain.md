@@ -1,6 +1,6 @@
 # 0011: Adopt Vite+ as the unified toolchain and vite-plugin start mode
 
-- Status: proposed
+- Status: accepted
 - Date: 2026-08-30
 
 ## Context
@@ -33,10 +33,29 @@ Also adopt start mode in client posture (no `ssr`): delete `index.html`, port it
 
 ## Evidence
 
-- viteplus.dev documentation inspected 2026-08-30 (commands, migration path, `vp check` scope); `oxfmt@0.65.0` on npm.
+- viteplus.dev documentation inspected 2026-08-30 (commands, migration path, `vp check` scope). The bundled formatter resolved to `oxfmt@0.64.0` under `vite-plus@0.3.0`, not the `0.65.0` originally noted.
 - `@solidjs/vite-plugin` README inspected 2026-08-30 (start mode options, client-mode output layout, authored-entry contract).
-- Migration verification evidence: recorded in the plan.
+- Migration landed and verified; evidence recorded in the plan
+  (`docs/plans/completed/2026-08-30-vite-plus-migration.md`). Toolchain and
+  start-mode commits: `e7455b9` (tooling), `fb9683a` (start mode).
+- Notable deviations from the proposed shape, accepted here:
+  - **No separate format-only commit.** Oxfmt's effective default `printWidth`
+    is 80, identical to the retired Prettier config, so the repo-wide reformat
+    produced zero source diff beyond the import rewrites and one union-type
+    wrap that rode along in the tooling commit. A standalone format commit
+    would have been empty.
+  - **`typeAware`/`typeCheck` lint options dropped.** `vp migrate` enabled
+    oxlint's type-aware checking, which flagged ~40 findings (intentional
+    test-boundary assertions like `as unknown as bigint`, `process.env` in
+    Playwright config). Removed to preserve the prior lint strictness;
+    adopting type-aware linting is a separate future decision.
+  - **`lazyPlugins` not used.** Its `PluginOption[] | undefined` type fails
+    `tsc` under `exactOptionalPropertyTypes`; plain `plugins: [...]` is used.
+  - **Dev-only `/__health` endpoint added.** Start mode's history fallback
+    only answers HTML-accepting GETs, so Playwright's `webServer` readiness
+    probe (no `Accept` header) 404s and times out. The probe now targets a
+    plain-200 health endpoint instead.
 
 ## Related Material
 
-- Plan: `docs/plans/active/2026-08-30-vite-plus-migration.md`.
+- Plan: `docs/plans/completed/2026-08-30-vite-plus-migration.md`.
