@@ -57,7 +57,7 @@ test.describe('explorer animated navigation', () => {
   test('a jump glides and lands exactly on the requested deck', async ({
     page,
   }) => {
-    await page.goto('/explore')
+    await page.goto('/')
 
     const input = page.locator('.jump input')
     await input.fill('5000000')
@@ -69,7 +69,7 @@ test.describe('explorer animated navigation', () => {
 
   test('reduced motion lands instantly, with no glide', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' })
-    await page.goto('/explore')
+    await page.goto('/')
     const feed = page.locator('.explorer-feed')
     await expect(feed).toBeVisible()
 
@@ -99,7 +99,7 @@ test.describe('explorer animated navigation', () => {
   test('a wheel input mid-animation cancels the animation', async ({
     page,
   }) => {
-    await page.goto('/explore')
+    await page.goto('/')
     const feed = page.locator('.explorer-feed')
     await expect(feed).toBeVisible()
 
@@ -156,7 +156,7 @@ test.describe('explorer animated navigation', () => {
     page,
   }) => {
     test.setTimeout(60_000)
-    await page.goto('/explore')
+    await page.goto('/')
     await expect(page.locator('.deck-row .deck-number').first()).toBeVisible()
 
     const feed = page.locator('.explorer-feed')
@@ -187,7 +187,7 @@ test.describe('explorer animated navigation', () => {
     page,
   }) => {
     await page.setViewportSize({ width: 1280, height: 900 })
-    await page.goto('/explore')
+    await page.goto('/')
 
     const feed = page.locator('.explorer-feed')
     // Trigger in-page so Playwright actionability latency cannot outlast the
@@ -218,7 +218,7 @@ test.describe('explorer animated navigation', () => {
   test('modified wheel input remains available for browser zoom', async ({
     page,
   }) => {
-    await page.goto('/explore')
+    await page.goto('/')
     const feed = page.locator('.explorer-feed')
     await feed.hover()
     const before = await topEdgeDeck(page)
@@ -235,7 +235,7 @@ test.describe('explorer animated navigation', () => {
   test('browser history keeps the URL and displayed deck synchronized', async ({
     page,
   }) => {
-    await page.goto('/explore')
+    await page.goto('/')
     const input = page.locator('.jump input')
 
     await input.fill('5000000')

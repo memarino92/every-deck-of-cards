@@ -1,29 +1,27 @@
 import { factorial } from './domain/factorial.ts'
+import { ExplorerPage } from './ExplorerPage.tsx'
 
 const deckCount = factorial(52).toLocaleString('en-US')
 
 export function HomePage() {
   return (
-    <section class="hero" aria-labelledby="hero-title">
-      <p class="eyebrow">52 cards. 80 unvigintillion possibilities.</p>
-      <h1 id="hero-title">
-        Every deck
-        <span>of cards.</span>
-      </h1>
-      <p class="count" aria-label={`${deckCount} possible decks`}>
-        {deckCount}
-      </p>
-      <div class="introduction">
+    <div class="home-page">
+      <section class="hero home-hero" aria-labelledby="hero-title">
+        <p class="eyebrow">52 cards. 80 unvigintillion possibilities.</p>
+        <h1 id="hero-title">
+          Every deck
+          <span>of cards.</span>
+        </h1>
         <p>
-          A standard deck has more possible orderings than we could ever
-          enumerate. This site will make every one of them addressable.
+          Every possible ordering of a standard 52-card deck, addressed by
+          number. Scroll to start exploring.
         </p>
-        <p class="construction">
-          The explorer is live: <a href="/explore">scroll every deck</a>, or
-          jump straight to any one of them by number. Curious how that's
-          possible? <a href="/why">Read why this exists</a>.
+        <p class="count" aria-label={`${deckCount} possible decks`}>
+          {deckCount}
         </p>
-      </div>
-    </section>
+      </section>
+
+      <ExplorerPage />
+    </div>
   )
 }

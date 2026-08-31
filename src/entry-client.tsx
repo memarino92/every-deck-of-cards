@@ -1,14 +1,27 @@
-import { createRouter } from '@solidjs/router'
+import { createRouter, useLocation, useNavigate } from '@solidjs/router'
 import { render } from '@solidjs/web'
+import { onSettled } from 'solid-js'
 
 import { CardGridPage } from './dev/CardGridPage.tsx'
-import { ExplorerPage } from './ExplorerPage.tsx'
 import { HomePage } from './HomePage.tsx'
 import { HowPage } from './HowPage.tsx'
 import { Layout } from './Layout.tsx'
 import { TalkPage } from './TalkPage.tsx'
 import { WhyPage } from './WhyPage.tsx'
 import './styles.css'
+
+function ExploreRedirect() {
+  const location = useLocation()
+  const navigate = useNavigate()
+
+  onSettled(() => {
+    queueMicrotask(() => {
+      navigate(`/${location.search}${location.hash}`, { replace: true })
+    })
+  })
+
+  return null
+}
 
 const Router = createRouter({
   routes: [
@@ -18,7 +31,7 @@ const Router = createRouter({
       component: Layout,
       children: [
         { path: '/', component: HomePage },
-        { path: '/explore', component: ExplorerPage },
+        { path: '/explore', component: ExploreRedirect },
         { path: '/dev/cards', component: CardGridPage },
         { path: '/why', component: WhyPage },
         { path: '/how', component: HowPage },

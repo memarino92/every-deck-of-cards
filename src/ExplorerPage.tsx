@@ -142,11 +142,16 @@ export function ExplorerPage() {
   )
 
   let feedEl: HTMLElement | undefined
+  let explorerEl: HTMLElement | undefined
   let railEl: HTMLDivElement | undefined
   let thumbEl: HTMLDivElement | undefined
+  let documentBottom = 0
 
   const assignFeedEl = (element: HTMLElement): void => {
     feedEl = element
+  }
+  const assignExplorerEl = (element: HTMLElement): void => {
+    explorerEl = element
   }
   const assignRailEl = (element: HTMLDivElement): void => {
     railEl = element
@@ -364,8 +369,24 @@ export function ExplorerPage() {
 
   // Wheel input over the feed advances the virtual position. Browser zoom
   // gestures stay native rather than being consumed as deck scrolling.
+  function documentOwnsScroll(deltaY: number): boolean {
+    const atStart = position().topIndex === 0n && position().offsetPx === 0
+
+    return (
+      !animating() &&
+      ((deltaY > 0 && globalThis.scrollY < documentBottom - 1) ||
+        (deltaY < 0 && atStart && globalThis.scrollY > 0))
+    )
+  }
+
   function handleWheel(event: WheelEvent): void {
     if (event.ctrlKey || event.metaKey) {
+      return
+    }
+
+    // Let the document carry the visitor through the intro before the virtual
+    // feed takes over, and back to it once the feed returns to deck 1.
+    if (documentOwnsScroll(event.deltaY)) {
       return
     }
 
@@ -416,27 +437,45 @@ export function ExplorerPage() {
     )
   }
 
-  // Touch dragging the feed pans the position one-to-one. Mouse drags are
-  // left alone so text selection and card hover keep working.
+  // Touch dragging pans the virtual position once the document reaches the
+  // feed. At deck 1, downward dragging returns control to the document so the
+  // intro remains reachable.
   let touchDragY: number | undefined
+  let touchDragIdentifier: number | undefined
 
-  function handleFeedPointerDown(event: PointerEvent): void {
-    if (event.pointerType !== 'touch' || feedEl === undefined) {
+  function handleFeedTouchStart(event: TouchEvent): void {
+    if (event.touches.length !== 1) {
+      endTouchDrag()
       return
     }
 
-    cancelAnimation()
-    touchDragY = event.clientY
-    feedEl.setPointerCapture(event.pointerId)
+    touchDragIdentifier = event.touches[0]?.identifier
+    touchDragY = event.touches[0]?.clientY
   }
 
-  function handleFeedPointerMove(event: PointerEvent): void {
-    if (touchDragY === undefined || event.pointerType !== 'touch') {
+  function handleFeedTouchMove(event: TouchEvent): void {
+    if (event.touches.length !== 1 || touchDragIdentifier === undefined) {
+      endTouchDrag()
       return
     }
 
-    const delta = touchDragY - event.clientY
-    touchDragY = event.clientY
+    const touch = event.touches[0]
+    const currentY =
+      touch?.identifier === touchDragIdentifier ? touch.clientY : undefined
+
+    if (touchDragY === undefined || currentY === undefined) {
+      return
+    }
+
+    const delta = touchDragY - currentY
+    touchDragY = currentY
+
+    if (documentOwnsScroll(delta)) {
+      return
+    }
+
+    event.preventDefault()
+    cancelAnimation()
     setPosition((current) =>
       advancePosition(current, delta, ROW_HEIGHT, visibleRows()),
     )
@@ -444,6 +483,7 @@ export function ExplorerPage() {
 
   function endTouchDrag(): void {
     touchDragY = undefined
+    touchDragIdentifier = undefined
   }
 
   // The rail maps percent-of-space to an exact position (decision 0009). The
@@ -500,12 +540,27 @@ export function ExplorerPage() {
   // --- Setup ---------------------------------------------------------------
 
   // Runs once when the component settles (Solid 2's mount-with-cleanup hook;
-  // the returned function fires on disposal). The feed is a full-viewport
-  // scroller that *is* the page: suppress the document's own scrolling while
-  // the explorer is mounted so wheel and touch input have exactly one meaning.
+  // the returned function fires on disposal). Normal document scrolling
+  // carries the compact intro away; the full-page feed then owns virtual input.
   onSettled(() => {
     document.body.classList.add('explorer-active')
     feedEl?.addEventListener('wheel', handleWheel, { passive: false })
+    feedEl?.addEventListener('touchmove', handleFeedTouchMove, {
+      passive: false,
+    })
+
+    const updateDocumentBottom = (): void => {
+      documentBottom = Math.max(
+        0,
+        document.documentElement.scrollHeight - globalThis.innerHeight,
+      )
+    }
+    updateDocumentBottom()
+    globalThis.addEventListener('resize', updateDocumentBottom)
+
+    if (firstSearchParam(searchParams['deck']) !== undefined) {
+      explorerEl?.scrollIntoView()
+    }
 
     let observer: ResizeObserver | undefined
 
@@ -518,6 +573,7 @@ export function ExplorerPage() {
 
           if (entry !== undefined) {
             setViewportHeight(entry.contentRect.height)
+            updateDocumentBottom()
           }
         })
         observer.observe(feedEl)
@@ -527,6 +583,8 @@ export function ExplorerPage() {
     return () => {
       document.body.classList.remove('explorer-active')
       feedEl?.removeEventListener('wheel', handleWheel)
+      feedEl?.removeEventListener('touchmove', handleFeedTouchMove)
+      globalThis.removeEventListener('resize', updateDocumentBottom)
       observer?.disconnect()
       cancelAnimation()
     }
@@ -555,11 +613,15 @@ export function ExplorerPage() {
   })
 
   return (
-    <section class="explorer" aria-labelledby="explorer-title">
+    <section
+      ref={assignExplorerEl}
+      class="explorer"
+      aria-labelledby="explorer-title"
+    >
       <header class="explorer-bar">
         <div class="explorer-heading">
           <p class="eyebrow">The explorer</p>
-          <h1 id="explorer-title">Every deck, in order.</h1>
+          <h2 id="explorer-title">Every deck, in order.</h2>
         </div>
 
         <form
@@ -607,10 +669,9 @@ export function ExplorerPage() {
         aria-label="Deck feed: every deck, in order"
         data-animating={animating() || undefined}
         onKeyDown={handleKeyDown}
-        onPointerDown={handleFeedPointerDown}
-        onPointerMove={handleFeedPointerMove}
-        onPointerUp={endTouchDrag}
-        onPointerCancel={endTouchDrag}
+        onTouchStart={handleFeedTouchStart}
+        onTouchEnd={endTouchDrag}
+        onTouchCancel={endTouchDrag}
       >
         <div
           class="explorer-strip"

@@ -37,10 +37,11 @@ test.describe('explorer scrollbar rail', () => {
   test('dragging the thumb to the bottom reaches the last deck', async ({
     page,
   }) => {
-    await page.goto('/explore')
+    await page.goto('/')
 
     const rail = page.locator('.explorer-rail')
     const thumb = page.locator('.explorer-rail-thumb')
+    await rail.scrollIntoViewIfNeeded()
     await expect(thumb).toBeVisible()
 
     const railBox = await rail.boundingBox()
@@ -76,9 +77,10 @@ test.describe('explorer scrollbar rail', () => {
   test('dragging to the middle lands in the middle of the space', async ({
     page,
   }) => {
-    await page.goto('/explore')
+    await page.goto('/')
 
     const rail = page.locator('.explorer-rail')
+    await rail.scrollIntoViewIfNeeded()
     const railBox = await rail.boundingBox()
     if (railBox === null) {
       throw new Error('Rail not laid out')

@@ -26,7 +26,7 @@ test.describe('explorer fling', () => {
   test('a fast wheel sequence moves the full distance and resolves rows', async ({
     page,
   }) => {
-    await page.goto(`/explore?deck=${START_DECK.toString()}`)
+    await page.goto(`/?deck=${START_DECK.toString()}`)
 
     const feed = page.locator('.explorer-feed')
     await expect(feed).toBeVisible()

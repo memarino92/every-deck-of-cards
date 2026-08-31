@@ -22,7 +22,7 @@ All indices use `bigint`. JavaScript `number` cannot exactly represent this rang
 
 ## Rendering
 
-The browser cannot create a scroll area with `52!` rows. The explorer's scroll position is application state: a `bigint` virtual position (the deck under the viewport's top edge plus a sub-row pixel offset) that wheel, keyboard, touch, and scrollbar-rail input advance directly. A bounded strip of rows — visible plus small overscan — follows the position, and a custom scrollbar rail maps percent-of-space back to an exact integer position. Only the strip's rows exist in memory or the DOM; deck numbers render synchronously from the position while card faces load asynchronously from the worker.
+The browser cannot create a scroll area with `52!` rows. The home page uses normal document scrolling for its compact introduction, then hands input to a full-page explorer whose scroll position is application state: a `bigint` virtual position (the deck under the viewport's top edge plus a sub-row pixel offset) that wheel, keyboard, touch, and scrollbar-rail input advance directly. A bounded strip of rows — visible plus small overscan — follows the position, and a custom scrollbar rail maps percent-of-space back to an exact integer position. Only the strip's rows exist in memory or the DOM; deck numbers render synchronously from the position while card faces load asynchronously from the worker.
 
 ## Computation
 
@@ -36,4 +36,4 @@ Technical documentation will be part of the application and reusable in a full-s
 
 ## Deployment
 
-Vite produces static assets in `dist/`. Cloudflare Workers Static Assets serves them directly with SPA fallback and security headers. There is no server-rendering path, API, or application Worker invocation.
+Vite produces deployable static assets in `dist/client`. Cloudflare Workers Static Assets serves them directly with SPA fallback and security headers. There is no server-rendering path, API, or application Worker invocation.

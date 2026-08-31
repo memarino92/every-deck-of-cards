@@ -1,6 +1,6 @@
 # 0012: The home page is the explorer
 
-- Status: proposed
+- Status: accepted
 - Date: 2026-08-30
 
 ## Context
@@ -25,9 +25,13 @@ The explorer is the home page. `/` renders a compact hero (wordmark-scale headin
 
 ## Evidence
 
-- Layout verification via the e2e suite; recorded in the plan.
+- `e2e/explorer-home.spec.ts` verifies the legacy redirect, sticky controls,
+  masthead GitHub link, footer removal, and full-page feed behavior.
+- The complete Playwright explorer suite verifies that the existing
+  virtual-position scroll, rail, navigation, and end-of-space behavior remains
+  intact on the home route.
 
 ## Related Material
 
-- Plan: `docs/plans/active/2026-08-30-explorer-first-home.md`.
+- Plan: `docs/plans/completed/2026-08-30-explorer-first-home.md`.
 - Decisions 0007 (deck-number URL contract), 0009 (scroll model).
