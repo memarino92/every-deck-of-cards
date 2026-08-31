@@ -121,7 +121,7 @@ test.describe('explorer animated navigation', () => {
 
         observer.disconnect()
         setTimeout(() => {
-          window.dispatchEvent(
+          target.dispatchEvent(
             new WheelEvent('wheel', { deltaY: 300, cancelable: true }),
           )
         }, 100)
@@ -181,5 +181,73 @@ test.describe('explorer animated navigation', () => {
 
     await page.keyboard.press('Home')
     expect(await waitForSettled(page)).toBe(1n)
+  })
+
+  test('an end jump re-clamps when the viewport resizes mid-animation', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1280, height: 900 })
+    await page.goto('/explore')
+
+    const feed = page.locator('.explorer-feed')
+    // Trigger in-page so Playwright actionability latency cannot outlast the
+    // 300ms animation before the resize is delivered.
+    await page.evaluate(() => {
+      const button =
+        document.querySelector<HTMLButtonElement>('.jump .end-button')
+      button?.click()
+    })
+    await page.setViewportSize({ width: 1280, height: 560 })
+    await expect(feed).not.toHaveAttribute('data-animating', /.*/)
+
+    const lastDeck =
+      '80,658,175,170,943,878,571,660,636,856,403,766,975,289,505,440,883,277,824,000,000,000,000'
+    const visibleNumbers = await feed.evaluate((element) => {
+      const viewport = element.getBoundingClientRect()
+      return [...element.querySelectorAll('.deck-row')]
+        .filter((row) => {
+          const rect = row.getBoundingClientRect()
+          return rect.bottom > viewport.top && rect.top < viewport.bottom
+        })
+        .map((row) => row.querySelector('.deck-number')?.textContent)
+    })
+
+    expect(visibleNumbers).toContain(lastDeck)
+  })
+
+  test('modified wheel input remains available for browser zoom', async ({
+    page,
+  }) => {
+    await page.goto('/explore')
+    const feed = page.locator('.explorer-feed')
+    await feed.hover()
+    const before = await topEdgeDeck(page)
+
+    await feed.dispatchEvent('wheel', {
+      deltaY: 600,
+      ctrlKey: true,
+      cancelable: true,
+    })
+
+    expect(await topEdgeDeck(page)).toBe(before)
+  })
+
+  test('browser history keeps the URL and displayed deck synchronized', async ({
+    page,
+  }) => {
+    await page.goto('/explore')
+    const input = page.locator('.jump input')
+
+    await input.fill('5000000')
+    await page.locator('.jump button[type="submit"]').click()
+    expect(await waitForSettled(page)).toBe(5_000_000n)
+
+    await input.fill('6000000')
+    await page.locator('.jump button[type="submit"]').click()
+    expect(await waitForSettled(page)).toBe(6_000_000n)
+
+    await page.goBack()
+    expect(await waitForSettled(page)).toBe(5_000_000n)
+    await expect(input).toHaveValue('5000000')
   })
 })

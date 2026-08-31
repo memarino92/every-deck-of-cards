@@ -4,12 +4,11 @@ import { unrankBatchIncremental } from './batch.ts'
  * Explorer worker entry point.
  *
  * Receives batch requests, unranked the requested decks via the incremental
- * producer (yielding between decks so a superseding request is picked up
- * promptly), and posts the card buffer back as a transferable object so the
- * bytes move without a structured clone. A new request supersedes any
- * in-flight one: the worker echoes the request's `seq`, and the client drops
- * responses whose `seq` is no longer current. Here the latest `seq` also cancels
- * a partially-computed batch early, so fast scrolling stays responsive.
+ * producer, and posts the card buffer back as a transferable object so the
+ * bytes move without a structured clone. The worker echoes the request's
+ * `seq`; the client drops stale responses. Requests are coalesced to one
+ * latest pending request, and the producer yields to the worker task queue
+ * between chunks so newer messages can cancel stale work before it completes.
  */
 
 export interface BatchRequest {
@@ -47,8 +46,59 @@ const scope = self as unknown as {
   postMessage(message: BatchResponse, transfer: Transferable[]): void
 }
 
-// The newest request seq received; an in-flight batch cancels when this moves.
+// The newest request seq received; a running batch stops if this has changed.
 let latestSeq = 0
+let latestRequest: BatchRequest | undefined
+let processing = false
+
+interface SchedulerLike {
+  yield(): Promise<void>
+}
+
+/** Yield to tasks (not just microtasks) so queued `message` events can run. */
+function yieldToWorkerTasks(): Promise<void> {
+  const scheduler = (
+    globalThis as typeof globalThis & {
+      scheduler?: SchedulerLike
+    }
+  ).scheduler
+
+  return scheduler?.yield() ?? new Promise((resolve) => setTimeout(resolve, 0))
+}
+
+async function processLatestRequest(): Promise<void> {
+  processing = true
+
+  try {
+    while (latestRequest !== undefined) {
+      const request = latestRequest
+      latestRequest = undefined
+      const seq = request.seq
+      // eslint-disable-next-line no-await-in-loop -- batches must run sequentially so pending requests coalesce
+      const batch = await unrankBatchIncremental(
+        request.startIndex,
+        request.count,
+        () => seq !== latestSeq,
+        yieldToWorkerTasks,
+      )
+
+      if (batch === undefined || seq !== latestSeq) {
+        continue
+      }
+
+      const response: BatchResponse = {
+        seq,
+        startIndex: batch.startIndex,
+        count: batch.count,
+        cards: batch.cards,
+      }
+
+      scope.postMessage(response, [batch.cards.buffer])
+    }
+  } finally {
+    processing = false
+  }
+}
 
 scope.addEventListener('message', (event: MessageEvent<unknown>) => {
   const request = event.data
@@ -58,27 +108,9 @@ scope.addEventListener('message', (event: MessageEvent<unknown>) => {
   }
 
   latestSeq = request.seq
-  const seq = request.seq
+  latestRequest = request
 
-  void unrankBatchIncremental(
-    request.startIndex,
-    request.count,
-    () => seq !== latestSeq,
-  ).then((batch) => {
-    // A superseded batch resolves to undefined and is never posted.
-    if (batch === undefined || seq !== latestSeq) {
-      return undefined
-    }
-
-    const response: BatchResponse = {
-      seq,
-      startIndex: batch.startIndex,
-      count: batch.count,
-      cards: batch.cards,
-    }
-
-    scope.postMessage(response, [batch.cards.buffer])
-
-    return undefined
-  })
+  if (!processing) {
+    void processLatestRequest()
+  }
 })

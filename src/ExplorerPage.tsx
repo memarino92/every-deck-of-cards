@@ -59,6 +59,12 @@ function prefersReducedMotion(): boolean {
   )
 }
 
+function firstSearchParam(
+  raw: string | string[] | undefined,
+): string | undefined {
+  return Array.isArray(raw) ? raw[0] : raw
+}
+
 interface DeckRowProps {
   readonly index: bigint
   readonly cards: () => Uint8Array | undefined
@@ -121,8 +127,7 @@ export function ExplorerPage() {
   // Read once at mount: the requested deck seeds the position; later `deck`
   // param changes come from this page's own navigations, not back at it.
   const requestedIndex = untrack(() => {
-    const raw = searchParams['deck']
-    return parseDeckNumberParam(Array.isArray(raw) ? raw[0] : raw)
+    return parseDeckNumberParam(firstSearchParam(searchParams['deck']))
   })
 
   const [position, setPosition] = createSignal<FeedPosition>(
@@ -246,16 +251,24 @@ export function ExplorerPage() {
   }
 
   /**
-   * Animate the position to `target` over JUMP_DURATION_MS, landing exactly
-   * on it. Reduced motion (or a missing rAF) jumps instantly. Any new input
+   * Animate the position to `target` over JUMP_DURATION_MS. The destination
+   * is re-clamped against live viewport geometry on every frame, so a resize
+   * during an end jump still lands with the final deck visible. Reduced motion
+   * (or a missing rAF) jumps instantly. Any new input
    * — wheel, rail, keyboard, touch, or another navigation — cancels a running
    * animation deterministically.
    */
   function animateTo(target: FeedPosition): void {
     cancelAnimation()
 
+    const currentTarget = (): FeedPosition =>
+      clampPosition(
+        target,
+        visibleRowCount(feedEl?.clientHeight ?? viewportHeight(), ROW_HEIGHT),
+      )
+
     if (prefersReducedMotion() || typeof requestAnimationFrame !== 'function') {
-      setPosition(target)
+      setPosition(currentTarget())
       return
     }
 
@@ -269,14 +282,14 @@ export function ExplorerPage() {
       if (t >= 1) {
         animationFrame = undefined
         setAnimating(false)
-        setPosition(target)
+        setPosition(currentTarget())
         return
       }
 
       setPosition(
         interpolatePosition(
           from,
-          target,
+          currentTarget(),
           easeInOutCubic(t),
           ROW_HEIGHT,
           visibleRows(),
@@ -289,13 +302,43 @@ export function ExplorerPage() {
   }
 
   // Navigate to a deck: sync the URL and input, then glide the position.
+  let ownDeckParam: string | undefined
+
   function navigateTo(deckIndex: bigint): void {
     const number = permutationIndexToPublicDeckNumber(deckIndex)
+    const deckParam = number.toString()
+    const currentParam = firstSearchParam(searchParams['deck'])
 
-    setJumpValue(number.toString())
-    setSearchParams({ deck: number.toString() })
-    animateTo(clampPosition(createPosition(deckIndex, 0), visibleRows()))
+    setJumpValue(deckParam)
+    ownDeckParam = currentParam === deckParam ? undefined : deckParam
+    setSearchParams({ deck: deckParam })
+    animateTo(createPosition(deckIndex, 0))
   }
+
+  // Own navigations already start their animation above. A later URL change
+  // from browser Back/Forward is external and must update the displayed deck
+  // so the shareable query string never disagrees with the feed.
+  let initialDeckParamObserved = false
+  createEffect(
+    () => firstSearchParam(searchParams['deck']),
+    (deckParam) => {
+      untrack(() => {
+        if (!initialDeckParamObserved) {
+          initialDeckParamObserved = true
+          return
+        }
+
+        if (deckParam === ownDeckParam) {
+          ownDeckParam = undefined
+          return
+        }
+
+        const index = parseDeckNumberParam(deckParam)
+        setJumpValue(permutationIndexToPublicDeckNumber(index).toString())
+        animateTo(createPosition(index, 0))
+      })
+    },
+  )
 
   function jump(): void {
     navigateTo(parseDeckNumberParam(jumpValue()))
@@ -319,10 +362,13 @@ export function ExplorerPage() {
 
   // --- Direct input: wheel, keyboard, touch drag, rail ---------------------
 
-  // The feed is the page: wheel input anywhere on it advances the position.
-  // Attached natively with passive:false so the browser's own scrolling
-  // (the page has none while the explorer is mounted) is always suppressed.
+  // Wheel input over the feed advances the virtual position. Browser zoom
+  // gestures stay native rather than being consumed as deck scrolling.
   function handleWheel(event: WheelEvent): void {
+    if (event.ctrlKey || event.metaKey) {
+      return
+    }
+
     event.preventDefault()
     cancelAnimation()
 
@@ -459,7 +505,7 @@ export function ExplorerPage() {
   // the explorer is mounted so wheel and touch input have exactly one meaning.
   onSettled(() => {
     document.body.classList.add('explorer-active')
-    window.addEventListener('wheel', handleWheel, { passive: false })
+    feedEl?.addEventListener('wheel', handleWheel, { passive: false })
 
     let observer: ResizeObserver | undefined
 
@@ -480,7 +526,7 @@ export function ExplorerPage() {
 
     return () => {
       document.body.classList.remove('explorer-active')
-      window.removeEventListener('wheel', handleWheel)
+      feedEl?.removeEventListener('wheel', handleWheel)
       observer?.disconnect()
       cancelAnimation()
     }

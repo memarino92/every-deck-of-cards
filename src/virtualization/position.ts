@@ -8,9 +8,9 @@ import { DECK_COUNT } from '../domain/deck-number.ts'
  * explorer holds its scroll position as application state: a `FeedPosition`
  * naming the deck at the viewport's top edge plus a sub-row pixel offset.
  * Wheel, keyboard, touch-drag, and scrollbar-rail input all advance this
- * position directly — the position never waits on the worker, so input can
- * never hit a data wall. Only the card faces load asynchronously; deck
- * numbers always render synchronously from the position.
+ * position directly — position updates do not await worker data. Only the
+ * card faces load asynchronously; deck numbers render synchronously from the
+ * position.
  *
  * All cross-space arithmetic is `bigint`; JavaScript `number` is used only
  * for pixel offsets and row counts within a single viewport, both far below
@@ -27,11 +27,24 @@ export interface FeedPosition {
   readonly offsetPx: number
 }
 
-export function createPosition(topIndex: bigint, offsetPx = 0): FeedPosition {
+export function createPosition(
+  topIndex: bigint,
+  offsetPx = 0,
+  rowHeightPx?: number,
+): FeedPosition {
   assertIndex(topIndex)
 
   if (!Number.isFinite(offsetPx) || offsetPx < 0) {
     throw new RangeError('Offset must be a non-negative finite number')
+  }
+  if (
+    offsetPx !== 0 &&
+    (rowHeightPx === undefined ||
+      !Number.isFinite(rowHeightPx) ||
+      rowHeightPx <= 0 ||
+      offsetPx >= rowHeightPx)
+  ) {
+    throw new RangeError('Nonzero offset must be less than the row height')
   }
 
   return Object.freeze({ topIndex, offsetPx })
@@ -131,7 +144,7 @@ export function advancePosition(
     return createPosition(maxTop, 0)
   }
 
-  return createPosition(top, offsetPx)
+  return createPosition(top, offsetPx, rowHeightPx)
 }
 
 /**
@@ -201,6 +214,9 @@ export function interpolatePosition(
   if (!Number.isFinite(t)) {
     throw new RangeError('Progress must be a finite number')
   }
+  if (!Number.isFinite(rowHeightPx) || rowHeightPx <= 0) {
+    throw new RangeError('Row height must be a positive finite number')
+  }
   if (t <= 0) {
     return from
   }
@@ -209,9 +225,13 @@ export function interpolatePosition(
   }
 
   const span = to.topIndex - from.topIndex
-  const maxSafe = BigInt(Number.MAX_SAFE_INTEGER)
+  const maxSafeRows = BigInt(
+    Math.floor(
+      Math.min(Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER / rowHeightPx),
+    ),
+  )
 
-  if (span < maxSafe && span > -maxSafe) {
+  if (span < maxSafeRows && span > -maxSafeRows) {
     const spanPx = Number(span) * rowHeightPx + (to.offsetPx - from.offsetPx)
 
     return advancePosition(from, spanPx * t, rowHeightPx, visibleRows)
@@ -249,7 +269,11 @@ export function stripRange(
     throw new RangeError('Overscan must be a non-negative safe integer')
   }
 
-  const visible = visibleRowCount(viewportHeightPx, rowHeightPx)
+  // A nonzero offset exposes another partial row at the viewport bottom.
+  const visible = Math.max(
+    1,
+    Math.ceil((viewportHeightPx + position.offsetPx) / rowHeightPx),
+  )
   const start =
     position.topIndex > BigInt(overscanRows)
       ? position.topIndex - BigInt(overscanRows)

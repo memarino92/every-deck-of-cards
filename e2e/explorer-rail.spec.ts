@@ -10,20 +10,27 @@ const LAST_DECK =
   '80,658,175,170,943,878,571,660,636,856,403,766,975,289,505,440,883,277,824,000,000,000,000'
 const LAST_DECK_PLAIN = LAST_DECK.replaceAll(',', '')
 
-async function maxVisibleDeck(page: Page): Promise<bigint> {
-  const numbers = await page.locator('.deck-row .deck-number').allTextContents()
+async function visibleDecks(page: Page): Promise<bigint[]> {
+  const numbers = await page.locator('.explorer-feed').evaluate((feed) => {
+    const viewport = feed.getBoundingClientRect()
 
-  return numbers
-    .map((text) => BigInt(text.replaceAll(',', '')))
-    .reduce((a, b) => (a > b ? a : b))
+    return [...feed.querySelectorAll('.deck-row')]
+      .filter((row) => {
+        const rect = row.getBoundingClientRect()
+        return rect.bottom > viewport.top && rect.top < viewport.bottom
+      })
+      .map((row) => row.querySelector('.deck-number')?.textContent ?? '')
+  })
+
+  return numbers.map((text) => BigInt(text.replaceAll(',', '')))
+}
+
+async function maxVisibleDeck(page: Page): Promise<bigint> {
+  return (await visibleDecks(page)).reduce((a, b) => (a > b ? a : b))
 }
 
 async function minVisibleDeck(page: Page): Promise<bigint> {
-  const numbers = await page.locator('.deck-row .deck-number').allTextContents()
-
-  return numbers
-    .map((text) => BigInt(text.replaceAll(',', '')))
-    .reduce((a, b) => (a < b ? a : b))
+  return (await visibleDecks(page)).reduce((a, b) => (a < b ? a : b))
 }
 
 test.describe('explorer scrollbar rail', () => {
