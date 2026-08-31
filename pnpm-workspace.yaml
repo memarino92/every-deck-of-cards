@@ -6,5 +6,13 @@ onlyBuiltDependencies:
 peerDependencyRules:
   allowedVersions:
     typescript: 7.0.2
+    vite: '*'
+  allowAny:
+    - vite
 saveExact: true
 strictPeerDependencies: true
+catalog:
+  vite: npm:@voidzero-dev/vite-plus-core@0.3.0
+  vite-plus: 0.3.0
+overrides:
+  vite@*: 'catalog:'

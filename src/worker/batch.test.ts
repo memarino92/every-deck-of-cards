@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vite-plus/test'
 
 import { CARD_COUNT, CANONICAL_DECK } from '../domain/cards.ts'
 import { DECK_COUNT } from '../domain/deck-number.ts'
@@ -155,7 +155,8 @@ function createFakeWorker(): WorkerLike & {
 } {
   const requests: BatchRequest[] = []
   let messageListener:
-    ((event: MessageEvent<BatchResponse>) => void) | undefined
+    | ((event: MessageEvent<BatchResponse>) => void)
+    | undefined
 
   const worker: WorkerLike & { requests: BatchRequest[] } = {
     requests,
