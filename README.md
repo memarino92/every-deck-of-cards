@@ -1,4 +1,4 @@
-# everydeckof.cards
+# [everydeckof.cards](https://everydeckof.cards)
 
 Every possible ordering of a standard 52-card deck, addressed by number.
 
