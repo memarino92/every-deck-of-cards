@@ -21,7 +21,11 @@ export default defineConfig({
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: {
     command: 'pnpm dev --port 5173',
-    url: 'http://localhost:5173',
+    // Start mode's history fallback only answers HTML-accepting GETs, and
+    // Playwright's readiness probe sends no `Accept` header, so a page URL
+    // would 404 and the suite would time out. Probe a plain 200 endpoint
+    // instead; the browser tests still navigate to real routes.
+    url: 'http://localhost:5173/__health',
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
   },

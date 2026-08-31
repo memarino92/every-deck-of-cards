@@ -11,7 +11,7 @@
     },
   ],
   "assets": {
-    "directory": "./dist",
+    "directory": "./dist/client",
     "not_found_handling": "single-page-application",
   },
 }
