@@ -85,7 +85,7 @@ After reviewing this slice, evaluate the Solid DnD library linked by the Solid e
 - [x] Evaluate drag-and-drop approaches after the prototype, including keyboard/touch behavior and Solid 2 compatibility.
 - [ ] Evaluate motion approaches separately for editor and talk/explainer reuse.
 - [x] Build the editor view with mouse/pen drag, touch long-press drag, keyboard/touch select-then-insert reordering, and a live deck number.
-- [ ] Define and implement the shareable deck-number URL format with strict validation.
+- [x] Define and implement the shareable `?deck=<one-based number>` URL format with strict validation and Back/Forward restoration.
 - [x] Build the shuffle animation with reduced-motion and cancellation behavior.
 - [ ] Cross-link editor, explainer, and `/why`.
 - [ ] Run all quality gates and record evidence.
@@ -103,6 +103,8 @@ After reviewing this slice, evaluate the Solid DnD library linked by the Solid e
 - 2026-08-31: Use the baseline Web Animations API for the first shuffle rather than adding a motion dependency. The editor needs one keyed FLIP-style transition; cards animate from captured old slots to the committed uniformly drawn target, intermediate geometry displays `Shuffling...` instead of a deck number, and the exact target number appears on settlement.
 - 2026-08-31: Shuffle motion lasts 760ms with small deterministic per-card lift, rotation, and delay variations. Stable card IDs split the deck exactly in half: IDs 0-25 arc upward and IDs 26-51 arc downward, independent of their current ordering. The downward arc stays within the deck's existing lower clearance rather than shifting the resting deck upward. Reset, a new shuffle, card interaction, or component disposal cancels active animations; reduced motion commits and reveals the target immediately.
 - 2026-08-31: Touch uses gesture arbitration on the card surface: a stationary 420ms press activates live drag with a best-effort 12ms Vibration API cue, movement beyond 8px before activation pans the horizontal spread, and a tap keeps select-then-insert behavior. Unsupported haptic environments silently continue. The editor owns these touch gestures with `touch-action: none`; manual panning currently has no momentum and remains part of the deferred mobile refinement.
+- 2026-09-01: Arrange shares the explorer's one-based `?deck=` contract and parser. Initial links and Back/Forward unrank the requested deck; tap moves, drag release, Reset, shuffle settlement, and interrupted shuffle settlement write one history entry for the settled ordering rather than writing every live drag crossing.
+- 2026-09-01: Shuffle animations use `fill: backwards`, not `both`. Backwards fill holds each old slot during its stagger delay but releases the animation transform after settlement, allowing the CSS drag lift to work after any number of shuffles.
 
 # Deviations
 
@@ -113,9 +115,9 @@ After reviewing this slice, evaluate the Solid DnD library linked by the Solid e
 
 - `vp check`: all 108 files formatted; no warnings or lint errors in 51 files.
 - `pnpm typecheck`: clean.
-- `vp test run`: 13 files and 156 tests passing, including pure reorder/coordinate and 26-up/26-down shuffle behavior, Arrange UI ranking/reset behavior, and exact reduced-motion shuffle settlement.
+- `vp test run`: 13 files and 157 tests passing, including pure reorder/coordinate and 26-up/26-down shuffle behavior, Arrange UI ranking/reset behavior, exact query initialization, and exact reduced-motion shuffle settlement.
 - `vp build`: client and server bundles built successfully.
-- `pnpm test:e2e`: 27 Chromium tests passing, including mouse and touch live-drag reranking, pre-long-press touch panning, rightmost/topmost canonical card presentation, exact animated shuffle settlement, Reset cancellation, reduced motion, and a 390px viewport check for contained horizontal overflow and 104px cards.
+- `pnpm test:e2e`: 28 Chromium tests passing, including post-shuffle drag lift, mouse and touch live-drag reranking, pre-long-press touch panning, shared-link and Back/Forward synchronization, rightmost/topmost canonical card presentation, exact animated shuffle settlement, Reset cancellation, reduced motion, and a 390px viewport check for contained horizontal overflow and 104px cards.
 
 # Outcome
 

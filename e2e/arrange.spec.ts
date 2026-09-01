@@ -43,8 +43,15 @@ test.describe('Arrange prototype', () => {
       .click({ position: { x: 6, y: 12 } })
 
     await expect(number).not.toHaveText('Deck number1')
+    const movedDeckNumber = (await number.textContent())
+      ?.replace('Deck number', '')
+      .replaceAll(',', '')
+    await expect(page).toHaveURL(
+      new RegExp(`[?&]deck=${movedDeckNumber ?? 'missing'}(?:&|$)`),
+    )
     await page.getByRole('button', { name: 'Reset deck' }).click()
     await expect(number).toHaveText('Deck number1')
+    await expect(page).toHaveURL(/[?&]deck=1(?:&|$)/)
   })
 
   test('updates the number while a card is being dragged', async ({ page }) => {
@@ -200,6 +207,32 @@ test.describe('Arrange prototype', () => {
       'data-shuffling',
       /.*/,
     )
+    await expect(page.getByRole('status')).toHaveText('Deck number43')
+    await expect(page).toHaveURL(/[?&]deck=43(?:&|$)/)
+
+    const ace = page.getByRole('button', { name: 'Select ace of spades' })
+    const aceBox = await ace.boundingBox()
+    if (aceBox === null) {
+      throw new Error('Shuffled drag geometry is unavailable')
+    }
+    await page.mouse.move(aceBox.x + 6, aceBox.y + 12)
+    await page.mouse.down()
+    await page.mouse.move(aceBox.x + 13, aceBox.y + 12)
+    await expect(ace).toHaveClass(/dragging/)
+    expect((await ace.boundingBox())?.y).toBeLessThan(aceBox.y)
+    await page.mouse.up()
+  })
+
+  test('opens shared deck links and follows deck history', async ({ page }) => {
+    await page.goto('/arrange?deck=43')
+
+    await expect(page.getByRole('status')).toHaveText('Deck number43')
+    await page.getByRole('button', { name: 'Reset deck' }).click()
+    await expect(page).toHaveURL(/[?&]deck=1(?:&|$)/)
+    await expect(page.getByRole('status')).toHaveText('Deck number1')
+
+    await page.goBack()
+    await expect(page).toHaveURL(/[?&]deck=43(?:&|$)/)
     await expect(page.getByRole('status')).toHaveText('Deck number43')
   })
 

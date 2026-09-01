@@ -1,4 +1,5 @@
 import { cleanup, fireEvent, render, screen } from '@solidjs/testing-library'
+import { createRouter, memoryHistory } from '@solidjs/router'
 import { afterEach, describe, expect, it } from 'vite-plus/test'
 
 import {
@@ -12,6 +13,35 @@ import { permutationIndexToPublicDeckNumber } from './domain/deck-number.ts'
 import { rankPermutation, unrankPermutation } from './domain/permutation.ts'
 
 afterEach(cleanup)
+
+function renderArrange(
+  options: {
+    readonly path?: string
+    readonly drawPermutationIndex?: () => bigint
+    readonly reducedMotion?: boolean
+  } = {},
+): void {
+  const Router = createRouter({
+    routes: [
+      {
+        path: '/arrange',
+        component: () => (
+          <ArrangePage
+            {...(options.drawPermutationIndex === undefined
+              ? {}
+              : { drawPermutationIndex: options.drawPermutationIndex })}
+            {...(options.reducedMotion === undefined
+              ? {}
+              : { reducedMotion: options.reducedMotion })}
+          />
+        ),
+      },
+    ],
+    history: memoryHistory(options.path ?? '/arrange'),
+  })
+
+  render(() => <Router>{(props) => props.children}</Router>)
+}
 
 describe('moveCard', () => {
   it('moves a card to the selected final position without mutation', () => {
@@ -51,7 +81,7 @@ describe('shuffleLiftForCard', () => {
 
 describe('ArrangePage', () => {
   it('moves a selected card and displays its exact public deck number', async () => {
-    render(() => <ArrangePage />)
+    renderArrange()
 
     await fireEvent.click(
       screen.getByRole('button', { name: 'Select ace of spades' }),
@@ -78,7 +108,7 @@ describe('ArrangePage', () => {
   })
 
   it('cancels a selection and resets the ordering', async () => {
-    render(() => <ArrangePage />)
+    renderArrange()
 
     const ace = screen.getByRole('button', { name: 'Select ace of spades' })
     await fireEvent.click(ace)
@@ -99,7 +129,7 @@ describe('ArrangePage', () => {
   })
 
   it('settles a reduced-motion shuffle on the exact drawn deck', async () => {
-    render(() => <ArrangePage drawPermutationIndex={() => 42n} reducedMotion />)
+    renderArrange({ drawPermutationIndex: () => 42n, reducedMotion: true })
 
     await fireEvent.click(screen.getByRole('button', { name: 'Shuffle' }))
 
@@ -113,5 +143,16 @@ describe('ArrangePage', () => {
         (element) => Number(element.dataset['cardId']),
       ),
     ).toEqual(expectedOrdering)
+  })
+
+  it('opens a shared deck query at its exact ordering', () => {
+    renderArrange({ path: '/arrange?deck=43' })
+
+    expect(screen.getByRole('status').textContent).toBe('Deck number43')
+    expect(
+      Array.from(document.querySelectorAll<HTMLElement>('.arrange-card')).map(
+        (element) => Number(element.dataset['cardId']),
+      ),
+    ).toEqual(unrankPermutation(CANONICAL_DECK, 42n))
   })
 })
