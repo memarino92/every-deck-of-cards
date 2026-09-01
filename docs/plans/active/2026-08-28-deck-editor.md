@@ -81,10 +81,10 @@ After reviewing this slice, evaluate the Solid DnD library linked by the Solid e
 
 - [x] Implement and test the pure random-index module per decision 0006 (`src/domain/random.ts`; verification will be rerun with the completed plan).
 - [x] Build the `/arrange` layout-and-bijection prototype without new dependencies; human visual review remains the next gate.
-- [ ] Decide whether the visual hierarchy and responsive composition warrant continuing.
-- [ ] Evaluate drag-and-drop approaches after the prototype, including keyboard/touch behavior and Solid 2 compatibility.
+- [x] Decide whether the visual hierarchy and responsive composition warrant continuing; human review accepted the prototype on 2026-08-31.
+- [x] Evaluate drag-and-drop approaches after the prototype, including keyboard/touch behavior and Solid 2 compatibility.
 - [ ] Evaluate motion approaches separately for editor and talk/explainer reuse.
-- [ ] Build the editor view with drag and keyboard reordering and live deck number.
+- [x] Build the editor view with mouse/pen drag, keyboard/touch select-then-insert reordering, and a live deck number.
 - [ ] Define and implement the shareable deck-number URL format with strict validation.
 - [ ] Build the shuffle animation with reduced-motion and cancellation behavior.
 - [ ] Cross-link editor, explainer, and `/why`.
@@ -96,6 +96,10 @@ After reviewing this slice, evaluate the Solid DnD library linked by the Solid e
 - 2026-08-31: Use **Arrange** as the provisional visitor-facing label and retain **Deck Editor** as the internal feature name.
 - 2026-08-31: Validate layout, responsive legibility, and live ranking with dependency-free select-then-insert before choosing drag-and-drop or motion libraries.
 - 2026-08-31: The prototype preserves a large card size on narrow screens using a horizontally pannable spread rather than compressing all 52 faces into the viewport. This is a candidate interaction to review, not a durable mobile-design decision.
+- 2026-08-31: Reject `@thisbeyond/solid-dnd` 0.7.5. Its last npm release was 2023-11-17, its peer range is Solid `^1.5`, its sortable preset supports only vertical lists, and its repository has an open maintenance-status issue. The editor uses a focused Pointer Events implementation instead of overriding an incompatible peer dependency.
+- 2026-08-31: Mouse and pen dragging reorder and rerank live as the card crosses positions. Touch retains native horizontal panning and tap-to-move because making the overlapping cards consume touch gestures would make the mobile deck track unnavigable.
+- 2026-08-31: Match the explorer and physical new-deck convention: canonical position zero is the rightmost, topmost card; later positions step left underneath it.
+- 2026-08-31: During drag, the card remains inserted at its current live-sorted position and inherits that position's normal stack order. It does not float horizontally or above the deck as a drag overlay.
 
 # Deviations
 
@@ -106,9 +110,9 @@ After reviewing this slice, evaluate the Solid DnD library linked by the Solid e
 
 - `vp check`: all 108 files formatted; no warnings or lint errors in 51 files.
 - `pnpm typecheck`: clean.
-- `vp test run`: 13 files and 152 tests passing, including pure reorder behavior and Arrange UI ranking/reset behavior.
+- `vp test run`: 13 files and 154 tests passing, including pure reorder/coordinate behavior and Arrange UI ranking/reset behavior.
 - `vp build`: client and server bundles built successfully.
-- `pnpm test:e2e`: 23 Chromium tests passing, including real pointer reordering and a 390px viewport check for contained horizontal overflow and 104px cards.
+- `pnpm test:e2e`: 24 Chromium tests passing, including live pointer-drag reranking, rightmost/topmost canonical card presentation, and a 390px viewport check for contained horizontal overflow and 104px cards.
 
 # Outcome
 

@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, render, screen } from '@solidjs/testing-library'
 import { afterEach, describe, expect, it } from 'vite-plus/test'
 
-import { ArrangePage, moveCard } from './ArrangePage.tsx'
+import { ArrangePage, moveCard, positionFromPointer } from './ArrangePage.tsx'
 import { CANONICAL_DECK } from './domain/cards.ts'
 import { permutationIndexToPublicDeckNumber } from './domain/deck-number.ts'
 import { rankPermutation } from './domain/permutation.ts'
@@ -19,6 +19,19 @@ describe('moveCard', () => {
   it('rejects positions outside the ordering', () => {
     expect(() => moveCard([0, 1], -1, 0)).toThrow(RangeError)
     expect(() => moveCard([0, 1], 0, 2)).toThrow(RangeError)
+  })
+})
+
+describe('positionFromPointer', () => {
+  it('maps spread coordinates to the nearest card position', () => {
+    expect(positionFromPointer(100, 100, 610, 100, 52)).toBe(51)
+    expect(positionFromPointer(350, 100, 610, 100, 52)).toBe(26)
+    expect(positionFromPointer(610, 100, 610, 100, 52)).toBe(0)
+  })
+
+  it('clamps pointers outside the spread', () => {
+    expect(positionFromPointer(-100, 0, 610, 100, 52)).toBe(51)
+    expect(positionFromPointer(1_000, 0, 610, 100, 52)).toBe(0)
   })
 })
 
