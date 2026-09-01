@@ -16,7 +16,8 @@ import {
   permutationIndexToPublicDeckNumber,
   publicDeckNumberToIndex,
 } from './domain/deck-number.ts'
-import { cryptoEntropy, randomPermutationIndex } from './domain/random.ts'
+import { randomPermutationIndex } from './domain/random.ts'
+import { cryptoEntropy } from './platform/crypto-entropy.ts'
 import { PlayingCard } from './PlayingCard.tsx'
 import { parseDeckNumberParam } from './virtualization/deck-param.ts'
 import {

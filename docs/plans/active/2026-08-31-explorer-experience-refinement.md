@@ -14,7 +14,7 @@ Revisit the explorer's responsive card presentation, perceived navigation throug
 
 # Non-Goals
 
-- Immediate implementation; deck-editor work takes priority.
+- Immediate implementation; sequencing will follow outside design feedback and current product priorities.
 - Changing permutation indexing or the exact relationship between a deck number and its ordering.
 - Committing to the explorer remaining on the home page. Returning it to a separate page remains an option.
 
@@ -24,7 +24,7 @@ The explorer-first home and virtual-position scroll model are accurate and provi
 
 - On narrow/mobile screens, 52 cards are compressed enough that their faces and pips cannot be read.
 - Touch dragging has no momentum. A fling stops abruptly instead of decelerating naturally.
-- A linear mapping from physical movement to the full `52!` space moves through early deck numbers almost immediately. For example, one small wheel input near the top can land around deck `178,403,946,068,202,559,706,484,722,952,110,384,791,828,043,188,428,559,821,570,048,000`. This is mathematically proportional but does not let visitors feel the smaller numbers first.
+- A linear mapping from physical movement to the full `52!` space moves through early deck numbers almost immediately. A small wheel input near the top can land on an extremely deep deck number. This is mathematically proportional but does not let visitors feel the smaller numbers first.
 - The transition from the hero into the explorer interaction feels clunky on one continuous page.
 - The current visual direction should be tested with outside opinions and may benefit from professional design input.
 

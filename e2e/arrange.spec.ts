@@ -80,6 +80,27 @@ test.describe('Arrange prototype', () => {
     await expect(page.getByRole('status')).not.toHaveText('Deck number1')
   })
 
+  test('reorders with keyboard activation', async ({ page }) => {
+    await page.goto('/arrange')
+
+    const ace = page.getByRole('button', { name: 'Select ace of spades' })
+    await ace.focus()
+    await expect(ace).toBeFocused()
+    await page.keyboard.press('Enter')
+    await expect(
+      page.getByRole('button', { name: 'Cancel moving ace of spades' }),
+    ).toHaveAttribute('aria-pressed', 'true')
+
+    const two = page.getByRole('button', {
+      name: /Move selected card to position 2, before two of spades/,
+    })
+    await two.focus()
+    await page.keyboard.press('Enter')
+
+    await expect(page.getByRole('status')).not.toHaveText('Deck number1')
+    await expect(page).toHaveURL(/[?&]deck=(?!1(?:&|$))[0-9]+(?:&|$)/)
+  })
+
   test('preserves readable cards in a contained mobile track', async ({
     page,
   }) => {

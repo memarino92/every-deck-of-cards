@@ -65,8 +65,9 @@ Equivalently via package scripts: `pnpm format:check`, `pnpm lint`,
 `pnpm typecheck`, `pnpm test`, `pnpm build`. Format with `vp fmt .` (or
 `pnpm format`).
 
-When a change touches scrolling, virtualization, or other behavior that is
-emergent between the browser and the app, also run the Playwright end-to-end
+When a change touches scrolling, virtualization, pointer capture, touch gesture
+arbitration, native animations, reduced motion, cancellation, or other behavior
+that is emergent between the browser and the app, also run the Playwright end-to-end
 suite (one-time browser setup: `pnpm exec playwright install chromium`):
 
 ```sh
@@ -74,8 +75,9 @@ pnpm test:e2e
 ```
 
 The e2e suite is the oracle for emergent browser behavior; do not try to
-verify that behavior with pure-TypeScript scroll simulations, which cannot
-model real `scrollTop` clamping and event cadence.
+verify it with pure-TypeScript simulations, which cannot model real
+`scrollTop` clamping, pointer capture, touch arbitration, animation lifecycle,
+or browser event cadence.
 
 On Windows where PowerShell blocks package-manager shims, use `pnpm.cmd`. The
 `vp` CLI installs to `~/AppData/Local/vite-plus/bin` (per the official
