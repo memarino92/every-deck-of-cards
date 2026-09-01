@@ -1,10 +1,19 @@
-import { createMemo, createSignal, For, onCleanup } from 'solid-js'
+import { useSearchParams } from '@solidjs/router'
+import {
+  createEffect,
+  createMemo,
+  createSignal,
+  For,
+  onCleanup,
+  untrack,
+} from 'solid-js'
 
 import { CANONICAL_DECK, cardFromId, type CardId } from './domain/cards.ts'
 import { permutationIndexToPublicDeckNumber } from './domain/deck-number.ts'
 import { rankPermutation, unrankPermutation } from './domain/permutation.ts'
 import { cryptoEntropy, randomPermutationIndex } from './domain/random.ts'
 import { PlayingCard } from './PlayingCard.tsx'
+import { parseDeckNumberParam } from './virtualization/deck-param.ts'
 
 const SHUFFLE_DURATION_MS = 760
 const TOUCH_LONG_PRESS_MS = 420
@@ -64,6 +73,12 @@ function cardName(id: CardId): string {
   return `${card.rank} of ${card.suit}`
 }
 
+function firstSearchParam(
+  raw: string | string[] | undefined,
+): string | undefined {
+  return Array.isArray(raw) ? raw[0] : raw
+}
+
 function prefersReducedMotion(): boolean {
   return (
     typeof globalThis.matchMedia === 'function' &&
@@ -77,8 +92,12 @@ interface ArrangePageProps {
 }
 
 export function ArrangePage(props: ArrangePageProps = {}) {
+  const [searchParams, setSearchParams] = useSearchParams()
+  const requestedIndex = parseDeckNumberParam(
+    untrack(() => firstSearchParam(searchParams['deck'])),
+  )
   const [ordering, setOrdering] = createSignal<readonly CardId[]>([
-    ...CANONICAL_DECK,
+    ...unrankPermutation(CANONICAL_DECK, requestedIndex),
   ])
   const [selectedIndex, setSelectedIndex] = createSignal<number>()
   const [draggedId, setDraggedId] = createSignal<CardId>()
@@ -133,14 +152,58 @@ export function ArrangePage(props: ArrangePageProps = {}) {
     }, 500)
   }
 
-  const cancelShuffle = (): void => {
+  let ownDeckParam: string | undefined
+
+  const syncDeckParam = (nextOrdering: readonly CardId[]): void => {
+    const deckParam = permutationIndexToPublicDeckNumber(
+      rankPermutation(CANONICAL_DECK, nextOrdering),
+    ).toString()
+
+    if (firstSearchParam(searchParams['deck']) === deckParam) {
+      return
+    }
+
+    ownDeckParam = deckParam
+    setSearchParams({ deck: deckParam })
+  }
+
+  const cancelShuffle = (syncTarget = true): void => {
+    const wasShuffling = isShuffling()
     shuffleRun += 1
     for (const animation of shuffleAnimations) {
       animation.cancel()
     }
     shuffleAnimations = []
     setIsShuffling(false)
+    if (wasShuffling && syncTarget) {
+      syncDeckParam(ordering())
+    }
   }
+
+  let initialDeckParamObserved = false
+  createEffect(
+    () => firstSearchParam(searchParams['deck']),
+    (deckParam) => {
+      untrack(() => {
+        if (!initialDeckParamObserved) {
+          initialDeckParamObserved = true
+          return
+        }
+
+        if (deckParam === ownDeckParam) {
+          ownDeckParam = undefined
+          return
+        }
+
+        cancelShuffle(false)
+        clearDrag()
+        setSelectedIndex(undefined)
+        setOrdering(
+          unrankPermutation(CANONICAL_DECK, parseDeckNumberParam(deckParam)),
+        )
+      })
+    },
+  )
 
   onCleanup(() => {
     if (dragSession?.longPressTimer !== undefined) {
@@ -278,6 +341,9 @@ export function ArrangePage(props: ArrangePageProps = {}) {
     if (session.dragging || session.panning) {
       suppressNextClick()
     }
+    if (session.dragging) {
+      syncDeckParam(ordering())
+    }
 
     clearDrag()
   }
@@ -309,19 +375,23 @@ export function ArrangePage(props: ArrangePageProps = {}) {
       return
     }
 
-    setOrdering(moveCard(ordering(), selected, position))
+    const nextOrdering = moveCard(ordering(), selected, position)
+    setOrdering(nextOrdering)
     setSelectedIndex(undefined)
+    syncDeckParam(nextOrdering)
   }
 
   const reset = (): void => {
-    cancelShuffle()
+    cancelShuffle(false)
     clearDrag()
-    setOrdering([...CANONICAL_DECK])
+    const nextOrdering = [...CANONICAL_DECK]
+    setOrdering(nextOrdering)
     setSelectedIndex(undefined)
+    syncDeckParam(nextOrdering)
   }
 
   const shuffle = (): void => {
-    cancelShuffle()
+    cancelShuffle(false)
     clearDrag()
     setSelectedIndex(undefined)
 
@@ -338,9 +408,11 @@ export function ArrangePage(props: ArrangePageProps = {}) {
 
     const index =
       props.drawPermutationIndex?.() ?? randomPermutationIndex(cryptoEntropy)
-    setOrdering(unrankPermutation(CANONICAL_DECK, index))
+    const targetOrdering = unrankPermutation(CANONICAL_DECK, index)
+    setOrdering(targetOrdering)
 
     if (props.reducedMotion ?? prefersReducedMotion()) {
+      syncDeckParam(targetOrdering)
       return
     }
 
@@ -376,7 +448,7 @@ export function ArrangePage(props: ArrangePageProps = {}) {
               duration: SHUFFLE_DURATION_MS,
               delay: (id % 13) * 7,
               easing: 'cubic-bezier(0.22, 0.72, 0.18, 1)',
-              fill: 'both',
+              fill: 'backwards',
             },
           )
         },
@@ -388,6 +460,7 @@ export function ArrangePage(props: ArrangePageProps = {}) {
         if (run === shuffleRun) {
           shuffleAnimations = []
           setIsShuffling(false)
+          untrack(() => syncDeckParam(targetOrdering))
         }
         return undefined
       })
