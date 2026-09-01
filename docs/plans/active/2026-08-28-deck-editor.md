@@ -80,7 +80,7 @@ After reviewing this slice, evaluate the Solid DnD library linked by the Solid e
 # Tasks
 
 - [x] Implement and test the pure random-index module per decision 0006 (`src/domain/random.ts`; verification will be rerun with the completed plan).
-- [ ] Build and review the `/arrange` layout-and-bijection prototype without new dependencies.
+- [x] Build the `/arrange` layout-and-bijection prototype without new dependencies; human visual review remains the next gate.
 - [ ] Decide whether the visual hierarchy and responsive composition warrant continuing.
 - [ ] Evaluate drag-and-drop approaches after the prototype, including keyboard/touch behavior and Solid 2 compatibility.
 - [ ] Evaluate motion approaches separately for editor and talk/explainer reuse.
@@ -95,6 +95,7 @@ After reviewing this slice, evaluate the Solid DnD library linked by the Solid e
 - Randomize draws a uniform target index and animates toward it; recorded as decision 0006 before implementation began.
 - 2026-08-31: Use **Arrange** as the provisional visitor-facing label and retain **Deck Editor** as the internal feature name.
 - 2026-08-31: Validate layout, responsive legibility, and live ranking with dependency-free select-then-insert before choosing drag-and-drop or motion libraries.
+- 2026-08-31: The prototype preserves a large card size on narrow screens using a horizontally pannable spread rather than compressing all 52 faces into the viewport. This is a candidate interaction to review, not a durable mobile-design decision.
 
 # Deviations
 
@@ -103,7 +104,11 @@ After reviewing this slice, evaluate the Solid DnD library linked by the Solid e
 
 # Verification Evidence
 
-Pending.
+- `vp check`: all 108 files formatted; no warnings or lint errors in 51 files.
+- `pnpm typecheck`: clean.
+- `vp test run`: 13 files and 152 tests passing, including pure reorder behavior and Arrange UI ranking/reset behavior.
+- `vp build`: client and server bundles built successfully.
+- `pnpm test:e2e`: 23 Chromium tests passing, including real pointer reordering and a 390px viewport check for contained horizontal overflow and 104px cards.
 
 # Outcome
 
