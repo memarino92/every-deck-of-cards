@@ -2,6 +2,7 @@ import { createRouter, useLocation, useNavigate } from '@solidjs/router'
 import { render } from '@solidjs/web'
 import { onSettled } from 'solid-js'
 
+import { ArrangePage } from './ArrangePage.tsx'
 import { CardGridPage } from './dev/CardGridPage.tsx'
 import { HomePage } from './HomePage.tsx'
 import { HowPage } from './HowPage.tsx'
@@ -31,6 +32,7 @@ const Router = createRouter({
       component: Layout,
       children: [
         { path: '/', component: HomePage },
+        { path: '/arrange', component: ArrangePage },
         { path: '/explore', component: ExploreRedirect },
         { path: '/dev/cards', component: CardGridPage },
         { path: '/why', component: WhyPage },
