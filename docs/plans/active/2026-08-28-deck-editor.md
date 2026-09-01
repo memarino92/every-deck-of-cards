@@ -84,9 +84,9 @@ After reviewing this slice, evaluate the Solid DnD library linked by the Solid e
 - [x] Decide whether the visual hierarchy and responsive composition warrant continuing; human review accepted the prototype on 2026-08-31.
 - [x] Evaluate drag-and-drop approaches after the prototype, including keyboard/touch behavior and Solid 2 compatibility.
 - [ ] Evaluate motion approaches separately for editor and talk/explainer reuse.
-- [x] Build the editor view with mouse/pen drag, keyboard/touch select-then-insert reordering, and a live deck number.
+- [x] Build the editor view with mouse/pen drag, touch long-press drag, keyboard/touch select-then-insert reordering, and a live deck number.
 - [ ] Define and implement the shareable deck-number URL format with strict validation.
-- [ ] Build the shuffle animation with reduced-motion and cancellation behavior.
+- [x] Build the shuffle animation with reduced-motion and cancellation behavior.
 - [ ] Cross-link editor, explainer, and `/why`.
 - [ ] Run all quality gates and record evidence.
 
@@ -97,9 +97,12 @@ After reviewing this slice, evaluate the Solid DnD library linked by the Solid e
 - 2026-08-31: Validate layout, responsive legibility, and live ranking with dependency-free select-then-insert before choosing drag-and-drop or motion libraries.
 - 2026-08-31: The prototype preserves a large card size on narrow screens using a horizontally pannable spread rather than compressing all 52 faces into the viewport. This is a candidate interaction to review, not a durable mobile-design decision.
 - 2026-08-31: Reject `@thisbeyond/solid-dnd` 0.7.5. Its last npm release was 2023-11-17, its peer range is Solid `^1.5`, its sortable preset supports only vertical lists, and its repository has an open maintenance-status issue. The editor uses a focused Pointer Events implementation instead of overriding an incompatible peer dependency.
-- 2026-08-31: Mouse and pen dragging reorder and rerank live as the card crosses positions. Touch retains native horizontal panning and tap-to-move because making the overlapping cards consume touch gestures would make the mobile deck track unnavigable.
+- 2026-08-31: Mouse and pen dragging reorder and rerank live as the card crosses positions. Touch retains tap-to-move and horizontal deck panning alongside the long-press drag arbitration described below.
 - 2026-08-31: Match the explorer and physical new-deck convention: canonical position zero is the rightmost, topmost card; later positions step left underneath it.
-- 2026-08-31: During drag, the card remains inserted at its current live-sorted position and inherits that position's normal stack order. It does not float horizontally or above the deck as a drag overlay.
+- 2026-08-31: During drag, the card remains horizontally inserted at its current live-sorted position rather than following the pointer as a free overlay. It keeps its insertion position's normal stack order and lifts 1.6rem so the exposed portion visibly protrudes from the deck.
+- 2026-08-31: Use the baseline Web Animations API for the first shuffle rather than adding a motion dependency. The editor needs one keyed FLIP-style transition; cards animate from captured old slots to the committed uniformly drawn target, intermediate geometry displays `Shuffling...` instead of a deck number, and the exact target number appears on settlement.
+- 2026-08-31: Shuffle motion lasts 760ms with small deterministic per-card lift, rotation, and delay variations. Stable card IDs split the deck exactly in half: IDs 0-25 arc upward and IDs 26-51 arc downward, independent of their current ordering. The downward arc stays within the deck's existing lower clearance rather than shifting the resting deck upward. Reset, a new shuffle, card interaction, or component disposal cancels active animations; reduced motion commits and reveals the target immediately.
+- 2026-08-31: Touch uses gesture arbitration on the card surface: a stationary 420ms press activates live drag with a best-effort 12ms Vibration API cue, movement beyond 8px before activation pans the horizontal spread, and a tap keeps select-then-insert behavior. Unsupported haptic environments silently continue. The editor owns these touch gestures with `touch-action: none`; manual panning currently has no momentum and remains part of the deferred mobile refinement.
 
 # Deviations
 
@@ -110,9 +113,9 @@ After reviewing this slice, evaluate the Solid DnD library linked by the Solid e
 
 - `vp check`: all 108 files formatted; no warnings or lint errors in 51 files.
 - `pnpm typecheck`: clean.
-- `vp test run`: 13 files and 154 tests passing, including pure reorder/coordinate behavior and Arrange UI ranking/reset behavior.
+- `vp test run`: 13 files and 156 tests passing, including pure reorder/coordinate and 26-up/26-down shuffle behavior, Arrange UI ranking/reset behavior, and exact reduced-motion shuffle settlement.
 - `vp build`: client and server bundles built successfully.
-- `pnpm test:e2e`: 24 Chromium tests passing, including live pointer-drag reranking, rightmost/topmost canonical card presentation, and a 390px viewport check for contained horizontal overflow and 104px cards.
+- `pnpm test:e2e`: 27 Chromium tests passing, including mouse and touch live-drag reranking, pre-long-press touch panning, rightmost/topmost canonical card presentation, exact animated shuffle settlement, Reset cancellation, reduced motion, and a 390px viewport check for contained horizontal overflow and 104px cards.
 
 # Outcome
 

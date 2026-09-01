@@ -1,10 +1,15 @@
 import { cleanup, fireEvent, render, screen } from '@solidjs/testing-library'
 import { afterEach, describe, expect, it } from 'vite-plus/test'
 
-import { ArrangePage, moveCard, positionFromPointer } from './ArrangePage.tsx'
+import {
+  ArrangePage,
+  moveCard,
+  positionFromPointer,
+  shuffleLiftForCard,
+} from './ArrangePage.tsx'
 import { CANONICAL_DECK } from './domain/cards.ts'
 import { permutationIndexToPublicDeckNumber } from './domain/deck-number.ts'
-import { rankPermutation } from './domain/permutation.ts'
+import { rankPermutation, unrankPermutation } from './domain/permutation.ts'
 
 afterEach(cleanup)
 
@@ -32,6 +37,15 @@ describe('positionFromPointer', () => {
   it('clamps pointers outside the spread', () => {
     expect(positionFromPointer(-100, 0, 610, 100, 52)).toBe(51)
     expect(positionFromPointer(1_000, 0, 610, 100, 52)).toBe(0)
+  })
+})
+
+describe('shuffleLiftForCard', () => {
+  it('sends exactly half the canonical cards up and half down', () => {
+    const lifts = CANONICAL_DECK.map((id) => shuffleLiftForCard(id))
+
+    expect(lifts.filter((lift) => lift < 0)).toHaveLength(26)
+    expect(lifts.filter((lift) => lift > 0)).toHaveLength(26)
   })
 })
 
@@ -82,5 +96,22 @@ describe('ArrangePage', () => {
     await fireEvent.click(screen.getByRole('button', { name: 'Reset deck' }))
 
     expect(screen.getByRole('status').textContent).toBe('Deck number1')
+  })
+
+  it('settles a reduced-motion shuffle on the exact drawn deck', async () => {
+    render(() => <ArrangePage drawPermutationIndex={() => 42n} reducedMotion />)
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Shuffle' }))
+
+    expect(screen.getByRole('status').textContent).toBe('Deck number43')
+    expect(
+      document.querySelector('.arrange')?.hasAttribute('data-shuffling'),
+    ).toBe(false)
+    const expectedOrdering = unrankPermutation(CANONICAL_DECK, 42n)
+    expect(
+      Array.from(document.querySelectorAll<HTMLElement>('.arrange-card')).map(
+        (element) => Number(element.dataset['cardId']),
+      ),
+    ).toEqual(expectedOrdering)
   })
 })
