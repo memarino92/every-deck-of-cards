@@ -2,7 +2,7 @@
 title: Deck editor with randomize shuffle
 status: active
 created: 2026-08-28
-updated: 2026-08-30
+updated: 2026-08-31
 owners:
   - human
   - opencode
@@ -24,6 +24,10 @@ This is the "down the road" editor the README has promised, now including the ra
 
 The randomize action must honor the site's premise: the animation travels to a _drawn_ index, so any of the 52! decks can be its endpoint, and the settled deck is always a real, reproducible number.
 
+The current visual concept is a blown-up counterpart to one explorer row: the exact public deck number spans the upper portion of the viewport and one deck is spread across the lower portion. Reordering cards updates the number continuously. This visitor-facing mode is provisionally called **Arrange**; **Deck Editor** remains the feature/architecture name until navigation and outside feedback establish better product language.
+
+The same visual vocabulary should eventually support the talk and How-page examples: concrete cards moving through factoradic and architecture walkthroughs rather than separate abstract diagrams. That reuse is a requirement to consider when selecting a motion library, not a reason to introduce one before the editor interaction is validated.
+
 # Dependencies
 
 - Decisions 0003 (factoradic), 0004 (canonical order), 0005 (sequential IDs), 0006 (randomize with visible shuffle).
@@ -37,6 +41,19 @@ The randomize action must honor the site's premise: the animation travels to a _
 - UI: a single-deck editor view showing all 52 cards in order with drag-to-reorder (pointer-based; keyboard-accessible reordering is a requirement, not a stretch goal), the live public deck number recomputed via `rankPermutation`, and a shareable URL carrying the number.
 - UI: the randomize button triggers the shuffle animation from current ordering to the drawn target, then settles and reveals/updates the deck number. Animation honors `prefers-reduced-motion` (instant transition) and is cancellable by any visitor interaction.
 - The animation's intermediate states may be synthesized by the rendering layer (e.g. positional easing between current and target arrangements); the domain guarantees only the endpoint. No fake numbers are ever displayed.
+
+## First Slice: Layout And Bijection Prototype
+
+Build an isolated `/arrange` route containing:
+
+- The canonical 52-card deck in local UI state, rendered as a large spread across the lower portion of the viewport.
+- Its exact one-based public deck number, derived synchronously with `rankPermutation`, across the upper portion.
+- A dependency-free select-then-insert interaction: select one card, then select an insertion position. This must work with pointer, keyboard, and touch activation.
+- A reset-to-canonical control and focused unit/UI tests for reorder-to-number behavior.
+
+This slice intentionally excludes drag-and-drop, shuffle/randomize UI, motion, URL persistence, and navigation polish. Its purpose is to answer the riskiest visual and interaction questions cheaply: whether 52 manipulable cards can be presented legibly on desktop and mobile, whether the number/card hierarchy feels right, and whether live ranking feels immediate.
+
+After reviewing this slice, evaluate the Solid DnD library linked by the Solid ecosystem against a minimal pointer implementation. Separately evaluate motion libraries against both card-reordering needs and talk-diagram needs. Record bundle cost, reduced-motion support, interruption semantics, Solid 2 compatibility, and measured frame behavior before adopting either dependency. Drag-and-drop and motion are separate choices; one library need not solve both.
 
 # Test Plan
 
@@ -62,7 +79,11 @@ The randomize action must honor the site's premise: the animation travels to a _
 
 # Tasks
 
-- [ ] Implement and test the pure random-index module per decision 0006.
+- [x] Implement and test the pure random-index module per decision 0006 (`src/domain/random.ts`; verification will be rerun with the completed plan).
+- [ ] Build and review the `/arrange` layout-and-bijection prototype without new dependencies.
+- [ ] Decide whether the visual hierarchy and responsive composition warrant continuing.
+- [ ] Evaluate drag-and-drop approaches after the prototype, including keyboard/touch behavior and Solid 2 compatibility.
+- [ ] Evaluate motion approaches separately for editor and talk/explainer reuse.
 - [ ] Build the editor view with drag and keyboard reordering and live deck number.
 - [ ] Define and implement the shareable deck-number URL format with strict validation.
 - [ ] Build the shuffle animation with reduced-motion and cancellation behavior.
@@ -72,10 +93,13 @@ The randomize action must honor the site's premise: the animation travels to a _
 # Decisions Made
 
 - Randomize draws a uniform target index and animates toward it; recorded as decision 0006 before implementation began.
+- 2026-08-31: Use **Arrange** as the provisional visitor-facing label and retain **Deck Editor** as the internal feature name.
+- 2026-08-31: Validate layout, responsive legibility, and live ranking with dependency-free select-then-insert before choosing drag-and-drop or motion libraries.
 
 # Deviations
 
 - 2026-08-30: Sequenced behind the explorer-first home layout and Solid 2.0 RC plans. The former makes `/` the explorer and removes the footer; the editor's entry point and shared chrome will be designed against that layout rather than the current masthead/footer/`/explore` structure.
+- 2026-08-31: The random-index module and tests are already present on updated `main`; the first implementation task is therefore the isolated interaction prototype.
 
 # Verification Evidence
 
