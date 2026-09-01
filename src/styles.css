@@ -201,7 +201,7 @@ h1 span {
   line-height: 1.4;
 }
 
-.arrange-reset {
+.arrange-control {
   flex: none;
   padding: 0.7rem 0.9rem;
   border: 1px solid rgb(214 170 93 / 55%);
@@ -217,8 +217,8 @@ h1 span {
   text-transform: uppercase;
 }
 
-.arrange-reset:hover,
-.arrange-reset:focus-visible {
+.arrange-control:hover,
+.arrange-control:focus-visible {
   border-color: #d6aa5d;
   background: rgb(214 170 93 / 10%);
 }
@@ -275,7 +275,7 @@ h1 span {
   border-radius: calc(var(--card-width) * 0.09);
   background: transparent;
   cursor: pointer;
-  touch-action: pan-x;
+  touch-action: none;
   transition:
     transform 140ms ease,
     filter 140ms ease;
@@ -297,7 +297,7 @@ h1 span {
 .arrange-card.dragging {
   cursor: grabbing;
   filter: drop-shadow(0 0.9rem 0.8rem rgb(0 0 0 / 55%));
-  transform: translateY(-1.2rem);
+  transform: translateY(-1.6rem);
   transition: none;
 }
 

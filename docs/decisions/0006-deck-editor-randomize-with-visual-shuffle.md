@@ -34,7 +34,10 @@ The animation is rendering-layer work; the domain only supplies the target index
 
 ## Evidence
 
-- To be recorded in the deck editor plan: domain tests for the random-index draw (bounds, rejection sampling, deterministic injection), and reduced-motion/cancellation behavior in UI tests.
+- `src/domain/random.test.ts` covers exact lower/small draws, bounds, rejection and retry, rejection exhaustion, and deterministic-corpus variation.
+- `src/ArrangePage.test.tsx` injects permutation index `42` and proves that reduced-motion shuffle settles on the matching ordering and public deck number `43`.
+- `e2e/arrange.spec.ts` fixes browser entropy to index `42` and verifies animated settlement on deck `43`, `Shuffling...` number suppression during intermediate geometry, Reset cancellation, and instant reduced-motion settlement.
+- Implementation and complete verification commands are recorded in the active deck-editor plan.
 
 ## Related Material
 

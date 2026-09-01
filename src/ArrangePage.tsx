@@ -1,9 +1,15 @@
-import { createMemo, createSignal, For } from 'solid-js'
+import { createMemo, createSignal, For, onCleanup } from 'solid-js'
 
 import { CANONICAL_DECK, cardFromId, type CardId } from './domain/cards.ts'
 import { permutationIndexToPublicDeckNumber } from './domain/deck-number.ts'
-import { rankPermutation } from './domain/permutation.ts'
+import { rankPermutation, unrankPermutation } from './domain/permutation.ts'
+import { cryptoEntropy, randomPermutationIndex } from './domain/random.ts'
 import { PlayingCard } from './PlayingCard.tsx'
+
+const SHUFFLE_DURATION_MS = 760
+const TOUCH_LONG_PRESS_MS = 420
+const TOUCH_SLOP_PX = 8
+const TOUCH_DRAG_HAPTIC_MS = 12
 
 export function moveCard<T>(
   ordering: readonly T[],
@@ -47,17 +53,36 @@ export function positionFromPointer(
   return Math.max(0, Math.min(itemCount - 1, itemCount - 1 - slotFromLeft))
 }
 
+export function shuffleLiftForCard(id: number): number {
+  return id < CANONICAL_DECK.length / 2
+    ? -(18 + (id % 5) * 3)
+    : 10 + (id % 5) * 2
+}
+
 function cardName(id: CardId): string {
   const card = cardFromId(id)
   return `${card.rank} of ${card.suit}`
 }
 
-export function ArrangePage() {
+function prefersReducedMotion(): boolean {
+  return (
+    typeof globalThis.matchMedia === 'function' &&
+    globalThis.matchMedia('(prefers-reduced-motion: reduce)').matches
+  )
+}
+
+interface ArrangePageProps {
+  readonly drawPermutationIndex?: () => bigint
+  readonly reducedMotion?: boolean
+}
+
+export function ArrangePage(props: ArrangePageProps = {}) {
   const [ordering, setOrdering] = createSignal<readonly CardId[]>([
     ...CANONICAL_DECK,
   ])
   const [selectedIndex, setSelectedIndex] = createSignal<number>()
   const [draggedId, setDraggedId] = createSignal<CardId>()
+  const [isShuffling, setIsShuffling] = createSignal(false)
   const deckNumber = createMemo(() =>
     permutationIndexToPublicDeckNumber(
       rankPermutation(CANONICAL_DECK, ordering()),
@@ -65,15 +90,23 @@ export function ArrangePage() {
   )
   let spreadTrack: HTMLDivElement | undefined
   let suppressClick = false
+  let suppressClickTimer: ReturnType<typeof setTimeout> | undefined
+  let shuffleRun = 0
+  let shuffleAnimations: Animation[] = []
   let dragSession:
     | {
         readonly pointerId: number
         readonly cardId: CardId
         readonly startX: number
+        readonly startY: number
         readonly grabOffset: number
         readonly initialOrdering: readonly CardId[]
+        readonly pointerType: string
+        readonly startScrollLeft: number
+        longPressTimer: ReturnType<typeof setTimeout> | undefined
         currentIndex: number
         dragging: boolean
+        panning: boolean
       }
     | undefined
 
@@ -82,29 +115,86 @@ export function ArrangePage() {
   }
 
   const clearDrag = (): void => {
+    if (dragSession?.longPressTimer !== undefined) {
+      clearTimeout(dragSession.longPressTimer)
+    }
     dragSession = undefined
     setDraggedId(undefined)
   }
+
+  const suppressNextClick = (): void => {
+    suppressClick = true
+    if (suppressClickTimer !== undefined) {
+      clearTimeout(suppressClickTimer)
+    }
+    suppressClickTimer = setTimeout(() => {
+      suppressClick = false
+      suppressClickTimer = undefined
+    }, 500)
+  }
+
+  const cancelShuffle = (): void => {
+    shuffleRun += 1
+    for (const animation of shuffleAnimations) {
+      animation.cancel()
+    }
+    shuffleAnimations = []
+    setIsShuffling(false)
+  }
+
+  onCleanup(() => {
+    if (dragSession?.longPressTimer !== undefined) {
+      clearTimeout(dragSession.longPressTimer)
+    }
+    if (suppressClickTimer !== undefined) {
+      clearTimeout(suppressClickTimer)
+    }
+    shuffleRun += 1
+    for (const animation of shuffleAnimations) {
+      animation.cancel()
+    }
+  })
 
   const handlePointerDown = (
     event: PointerEvent & { currentTarget: HTMLButtonElement },
     id: CardId,
     position: number,
   ): void => {
-    if (event.pointerType === 'touch' || event.button !== 0) {
+    if (event.pointerType !== 'touch' && event.button !== 0) {
       return
     }
 
+    cancelShuffle()
+
     const cardRect = event.currentTarget.getBoundingClientRect()
-    dragSession = {
+    const initialSession = {
       pointerId: event.pointerId,
       cardId: id,
       startX: event.clientX,
+      startY: event.clientY,
       grabOffset: event.clientX - cardRect.left,
       initialOrdering: ordering(),
+      pointerType: event.pointerType,
+      startScrollLeft: spreadTrack?.parentElement?.scrollLeft ?? 0,
+      longPressTimer: undefined as ReturnType<typeof setTimeout> | undefined,
       currentIndex: position,
       dragging: false,
+      panning: false,
     }
+    dragSession = initialSession
+
+    if (event.pointerType === 'touch') {
+      initialSession.longPressTimer = setTimeout(() => {
+        if (dragSession === initialSession && !initialSession.panning) {
+          initialSession.longPressTimer = undefined
+          initialSession.dragging = true
+          setDraggedId(initialSession.cardId)
+          setSelectedIndex(undefined)
+          globalThis.navigator.vibrate?.(TOUCH_DRAG_HAPTIC_MS)
+        }
+      }, TOUCH_LONG_PRESS_MS)
+    }
+
     event.currentTarget.setPointerCapture(event.pointerId)
   }
 
@@ -117,6 +207,32 @@ export function ArrangePage() {
       session.pointerId !== event.pointerId ||
       track === undefined
     ) {
+      return
+    }
+
+    if (!session.dragging && session.pointerType === 'touch') {
+      const distance = Math.hypot(
+        event.clientX - session.startX,
+        event.clientY - session.startY,
+      )
+
+      if (!session.panning && distance < TOUCH_SLOP_PX) {
+        return
+      }
+
+      if (!session.panning) {
+        if (session.longPressTimer !== undefined) {
+          clearTimeout(session.longPressTimer)
+          session.longPressTimer = undefined
+        }
+        session.panning = true
+      }
+
+      const spread = track.parentElement
+      if (spread !== null) {
+        spread.scrollLeft =
+          session.startScrollLeft - (event.clientX - session.startX)
+      }
       return
     }
 
@@ -159,8 +275,8 @@ export function ArrangePage() {
       event.currentTarget.releasePointerCapture(event.pointerId)
     }
 
-    if (session.dragging) {
-      suppressClick = true
+    if (session.dragging || session.panning) {
+      suppressNextClick()
     }
 
     clearDrag()
@@ -180,6 +296,7 @@ export function ArrangePage() {
   }
 
   const selectPosition = (position: number): void => {
+    cancelShuffle()
     const selected = selectedIndex()
 
     if (selected === undefined) {
@@ -197,13 +314,92 @@ export function ArrangePage() {
   }
 
   const reset = (): void => {
+    cancelShuffle()
     clearDrag()
     setOrdering([...CANONICAL_DECK])
     setSelectedIndex(undefined)
   }
 
+  const shuffle = (): void => {
+    cancelShuffle()
+    clearDrag()
+    setSelectedIndex(undefined)
+
+    const track = spreadTrack
+    const previousRects = new Map<number, DOMRect>()
+    if (track !== undefined) {
+      for (const element of track.querySelectorAll<HTMLElement>(
+        '.arrange-card',
+      )) {
+        const id = Number(element.dataset['cardId'])
+        previousRects.set(id, element.getBoundingClientRect())
+      }
+    }
+
+    const index =
+      props.drawPermutationIndex?.() ?? randomPermutationIndex(cryptoEntropy)
+    setOrdering(unrankPermutation(CANONICAL_DECK, index))
+
+    if (props.reducedMotion ?? prefersReducedMotion()) {
+      return
+    }
+
+    const run = shuffleRun + 1
+    shuffleRun = run
+    setIsShuffling(true)
+
+    requestAnimationFrame(() => {
+      if (run !== shuffleRun || track === undefined) {
+        return
+      }
+
+      shuffleAnimations = Array.from(
+        track.querySelectorAll<HTMLElement>('.arrange-card'),
+        (element) => {
+          const id = Number(element.dataset['cardId'])
+          const previousRect = previousRects.get(id)
+          const nextRect = element.getBoundingClientRect()
+          const deltaX = (previousRect?.left ?? nextRect.left) - nextRect.left
+          const direction = Math.sign(deltaX) || (id % 2 === 0 ? 1 : -1)
+          const lift = shuffleLiftForCard(id)
+
+          return element.animate(
+            [
+              { transform: `translateX(${deltaX}px)` },
+              {
+                offset: 0.55,
+                transform: `translateX(${deltaX * 0.3}px) translateY(${lift}px) rotate(${direction * 2.5}deg)`,
+              },
+              { transform: 'translateX(0) translateY(0) rotate(0)' },
+            ],
+            {
+              duration: SHUFFLE_DURATION_MS,
+              delay: (id % 13) * 7,
+              easing: 'cubic-bezier(0.22, 0.72, 0.18, 1)',
+              fill: 'both',
+            },
+          )
+        },
+      )
+
+      void Promise.allSettled(
+        shuffleAnimations.map((animation) => animation.finished),
+      ).then(() => {
+        if (run === shuffleRun) {
+          shuffleAnimations = []
+          setIsShuffling(false)
+        }
+        return undefined
+      })
+    })
+  }
+
   return (
-    <section class="arrange" aria-labelledby="arrange-title">
+    <section
+      class="arrange"
+      aria-labelledby="arrange-title"
+      data-shuffling={isShuffling() ? '' : undefined}
+    >
       <div class="arrange-heading">
         <div>
           <p class="eyebrow">Arrange one exact shuffle</p>
@@ -214,9 +410,13 @@ export function ArrangePage() {
 
         <div class="arrange-actions">
           <p class="arrange-instructions" id="arrange-instructions">
-            Drag a card, or select it and then select where it should move.
+            Drag a card, or select it and then select where it should move. On
+            touch, long press to drag.
           </p>
-          <button class="arrange-reset" type="button" onClick={reset}>
+          <button class="arrange-control" type="button" onClick={shuffle}>
+            Shuffle
+          </button>
+          <button class="arrange-control" type="button" onClick={reset}>
             Reset deck
           </button>
         </div>
@@ -224,7 +424,7 @@ export function ArrangePage() {
 
       <output class="arrange-number" aria-live="polite">
         <span>Deck number</span>
-        {deckNumber().toLocaleString('en-US')}
+        {isShuffling() ? 'Shuffling...' : deckNumber().toLocaleString('en-US')}
       </output>
 
       <div class="arrange-spread" aria-describedby="arrange-instructions">
@@ -252,6 +452,7 @@ export function ArrangePage() {
                   type="button"
                   aria-label={label()}
                   aria-pressed={isSelected() ? 'true' : 'false'}
+                  data-card-id={id}
                   style={{
                     '--position': position(),
                     'z-index': ordering().length - position(),
@@ -259,6 +460,10 @@ export function ArrangePage() {
                   onClick={() => {
                     if (suppressClick) {
                       suppressClick = false
+                      if (suppressClickTimer !== undefined) {
+                        clearTimeout(suppressClickTimer)
+                        suppressClickTimer = undefined
+                      }
                       return
                     }
 
