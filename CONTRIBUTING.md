@@ -26,8 +26,9 @@ vp build
 The package.json equivalents (`pnpm format:check`, `pnpm lint`,
 `pnpm typecheck`, `pnpm test`, `pnpm build`) run the same tools.
 
-If your change touches scrolling, virtualization, or other behavior that is
-emergent between the browser and the app, also run the end-to-end suite
+If your change touches scrolling, virtualization, pointer capture, touch
+gesture arbitration, native animations, reduced motion, cancellation, or
+other behavior that is emergent between the browser and the app, also run the end-to-end suite
 (install the browser first with `pnpm exec playwright install chromium`):
 
 ```sh

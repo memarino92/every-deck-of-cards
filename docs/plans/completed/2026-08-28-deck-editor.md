@@ -1,8 +1,8 @@
 ---
 title: Deck editor with randomize shuffle
-status: active
+status: completed
 created: 2026-08-28
-updated: 2026-08-31
+updated: 2026-09-01
 owners:
   - human
   - opencode
@@ -20,7 +20,7 @@ Let a visitor arrange a deck by drag and drop, watch its exact public deck numbe
 
 # Context
 
-This is the "down the road" editor the README has promised, now including the randomize-with-visual-shuffle requirement captured in decision 0006. It depends on the domain being final — which is why the sequential card-ID realignment (decision 0005) lands first: the editor displays card IDs as canonical positions, and the explainer (factoradic explainer plan) uses the same symbols.
+At planning time this was the "down the road" editor promised by the README, including the randomize-with-visual-shuffle requirement captured in decision 0006. It depended on the domain being final, so the sequential card-ID realignment (decision 0005) landed first: the editor displays card IDs as canonical positions, and the explainer uses the same symbols.
 
 The randomize action must honor the site's premise: the animation travels to a _drawn_ index, so any of the 52! decks can be its endpoint, and the settled deck is always a real, reproducible number.
 
@@ -31,13 +31,13 @@ The same visual vocabulary should eventually support the talk and How-page examp
 # Dependencies
 
 - Decisions 0003 (factoradic), 0004 (canonical order), 0005 (sequential IDs), 0006 (randomize with visible shuffle).
-- The pure random-index domain module specified by decision 0006: uniform draw over `0..52!-1` via `crypto.getRandomValues` with rejection sampling, injectable entropy for tests.
+- The platform-independent random-index domain module specified by decision 0006: uniform rejection sampling over `0..52!-1` with injected entropy, plus a Web Crypto platform adapter for production.
 - Routing/navigation from the Why page and explainer plans.
 - The explorer-first home layout plan (`completed/2026-08-30-explorer-first-home.md`) and the Solid 2.0 RC upgrade (`completed/2026-08-30-solid-2-rc-upgrade.md`) land first. The former moves the explorer onto `/` with pinned controls, so the editor's navigation entry point and any shared explorer chrome must be built against the new layout; the latter means editor UI code targets Solid 2.0 APIs.
 
 # Proposed Changes
 
-- Domain: add `randomPermutationIndex` (or equivalent) — a pure function of an injected byte source, with rejection sampling against `52!` and no modulo bias; exported alongside a production adapter using `crypto.getRandomValues`.
+- Domain: add `randomPermutationIndex` — a platform-independent algorithm with an injected byte source, rejection sampling against `52!`, and no modulo bias. A platform adapter supplies `crypto.getRandomValues` in production.
 - UI: a single-deck editor view showing all 52 cards in order with drag-to-reorder (pointer-based; keyboard-accessible reordering is a requirement, not a stretch goal), the live public deck number recomputed via `rankPermutation`, and a shareable URL carrying the number.
 - UI: the randomize button triggers the shuffle animation from current ordering to the drawn target, then settles and reveals/updates the deck number. Animation honors `prefers-reduced-motion` (instant transition) and is cancellable by any visitor interaction.
 - The animation's intermediate states may be synthesized by the rendering layer (e.g. positional easing between current and target arrangements); the domain guarantees only the endpoint. No fake numbers are ever displayed.
@@ -73,22 +73,22 @@ After reviewing this slice, evaluate the Solid DnD library linked by the Solid e
 
 # Documentation Changes
 
-- README Future Interaction section updated to describe the shipped editor and randomize.
+- README interaction section updated to describe shipped Arrange and Shuffle behavior.
 - Decision 0006 evidence section completed.
-- The editor links to the factoradic explainer for "why is this number exact?"
+- Arrange discoverability from `/why` and broader talk/explainer motion reuse moved to the active Why/talk documentation follow-up.
 
 # Tasks
 
-- [x] Implement and test the pure random-index module per decision 0006 (`src/domain/random.ts`; verification will be rerun with the completed plan).
-- [x] Build the `/arrange` layout-and-bijection prototype without new dependencies; human visual review remains the next gate.
+- [x] Implement and test the injected-entropy random-index module per decision 0006 (`src/domain/random.ts`; verification will be rerun with the completed plan).
+- [x] Build and review the `/arrange` layout-and-bijection prototype without new dependencies.
 - [x] Decide whether the visual hierarchy and responsive composition warrant continuing; human review accepted the prototype on 2026-08-31.
 - [x] Evaluate drag-and-drop approaches after the prototype, including keyboard/touch behavior and Solid 2 compatibility.
-- [ ] Evaluate motion approaches separately for editor and talk/explainer reuse.
+- [x] Evaluate editor motion approaches and adopt native Web Animations; move broader talk/explainer reuse to future talk work.
 - [x] Build the editor view with mouse/pen drag, touch long-press drag, keyboard/touch select-then-insert reordering, and a live deck number.
 - [x] Define and implement the shareable `?deck=<one-based number>` URL format with strict validation and Back/Forward restoration.
 - [x] Build the shuffle animation with reduced-motion and cancellation behavior.
-- [ ] Cross-link editor, explainer, and `/why`.
-- [ ] Run all quality gates and record evidence.
+- [x] Move Arrange/explainer/`/why` cross-linking into the active Why/talk documentation follow-up.
+- [x] Run all quality gates and record evidence.
 
 # Decisions Made
 
@@ -96,7 +96,7 @@ After reviewing this slice, evaluate the Solid DnD library linked by the Solid e
 - 2026-08-31: Use **Arrange** as the provisional visitor-facing label and retain **Deck Editor** as the internal feature name.
 - 2026-08-31: Validate layout, responsive legibility, and live ranking with dependency-free select-then-insert before choosing drag-and-drop or motion libraries.
 - 2026-08-31: The prototype preserves a large card size on narrow screens using a horizontally pannable spread rather than compressing all 52 faces into the viewport. This is a candidate interaction to review, not a durable mobile-design decision.
-- 2026-08-31: Reject `@thisbeyond/solid-dnd` 0.7.5. Its last npm release was 2023-11-17, its peer range is Solid `^1.5`, its sortable preset supports only vertical lists, and its repository has an open maintenance-status issue. The editor uses a focused Pointer Events implementation instead of overriding an incompatible peer dependency.
+- 2026-08-31: Reject `@thisbeyond/solid-dnd` 0.7.5. Package metadata and the repository were observed on that date: its last npm release was 2023-11-17, its peer range was Solid `^1.5`, its sortable preset supported only vertical lists, and [maintenance status was an open question](https://github.com/thisbeyond/solid-dnd/issues/117). The editor uses a focused Pointer Events implementation instead of overriding an incompatible peer dependency.
 - 2026-08-31: Mouse and pen dragging reorder and rerank live as the card crosses positions. Touch retains tap-to-move and horizontal deck panning alongside the long-press drag arbitration described below.
 - 2026-08-31: Match the explorer and physical new-deck convention: canonical position zero is the rightmost, topmost card; later positions step left underneath it.
 - 2026-08-31: During drag, the card remains horizontally inserted at its current live-sorted position rather than following the pointer as a free overlay. It keeps its insertion position's normal stack order and lifts 1.6rem so the exposed portion visibly protrudes from the deck.
@@ -105,24 +105,32 @@ After reviewing this slice, evaluate the Solid DnD library linked by the Solid e
 - 2026-08-31: Touch uses gesture arbitration on the card surface: a stationary 420ms press activates live drag with a best-effort 12ms Vibration API cue, movement beyond 8px before activation pans the horizontal spread, and a tap keeps select-then-insert behavior. Unsupported haptic environments silently continue. The editor owns these touch gestures with `touch-action: none`; manual panning currently has no momentum and remains part of the deferred mobile refinement.
 - 2026-09-01: Arrange shares the explorer's one-based `?deck=` contract and parser. Initial links and Back/Forward unrank the requested deck; tap moves, drag release, Reset, shuffle settlement, and interrupted shuffle settlement write one history entry for the settled ordering rather than writing every live drag crossing.
 - 2026-09-01: Shuffle animations use `fill: backwards`, not `both`. Backwards fill holds each old slot during its stagger delay but releases the animation transform after settlement, allowing the CSS drag lift to work after any number of shuffles.
+- 2026-09-01: Keep the random-index algorithm platform-independent and place the production Web Crypto entropy adapter in the platform boundary.
 
 # Deviations
 
 - 2026-08-30: Sequenced behind the explorer-first home layout and Solid 2.0 RC plans. The former makes `/` the explorer and removes the footer; the editor's entry point and shared chrome will be designed against that layout rather than the current masthead/footer/`/explore` structure.
 - 2026-08-31: The random-index module and tests are already present on updated `main`; the first implementation task is therefore the isolated interaction prototype.
+- 2026-09-01: Broader motion-library evaluation for talk diagrams and explicit `/why` cross-linking do not block the shipped editor. They moved to future talk/documentation work rather than keeping this verified plan active.
 
-# Verification Evidence
+# Verification Evidence (2026-09-01, merged feature revision `701ced3`)
 
 - `vp check`: all 108 files formatted; no warnings or lint errors in 51 files.
 - `pnpm typecheck`: clean.
 - `vp test run`: 13 files and 157 tests passing, including pure reorder/coordinate and 26-up/26-down shuffle behavior, Arrange UI ranking/reset behavior, exact query initialization, and exact reduced-motion shuffle settlement.
 - `vp build`: client and server bundles built successfully.
-- `pnpm test:e2e`: 28 Chromium tests passing, including post-shuffle drag lift, mouse and touch live-drag reranking, pre-long-press touch panning, shared-link and Back/Forward synchronization, rightmost/topmost canonical card presentation, exact animated shuffle settlement, Reset cancellation, reduced motion, and a 390px viewport check for contained horizontal overflow and 104px cards.
+- `pnpm test:e2e`: 28 Chromium tests passing at feature completion, including post-shuffle drag lift, mouse and touch live-drag reranking, pre-long-press touch panning, shared-link and Back/Forward synchronization, rightmost/topmost canonical card presentation, exact animated shuffle settlement, Reset cancellation, reduced motion, and a 390px viewport check for contained horizontal overflow and 104px cards. Keyboard activation received explicit browser coverage in the later documentation follow-up.
 
 # Outcome
 
-Pending.
+Arrange shipped at `/arrange` as a separate single-deck surface. It renders the canonical first card rightmost and topmost, ranks mouse/pen drag and keyboard/tap reordering live, supports touch long-press drag with manual horizontal panning and best-effort haptics, and synchronizes settled orderings through the explorer-compatible one-based `?deck=` URL contract.
+
+Shuffle draws an unbiased Web Crypto target through the injected-entropy domain algorithm, commits that exact permutation, and animates keyed cards with the native Web Animations API. Intermediate geometry suppresses the number, reduced motion settles immediately, and visitor interaction cancels deterministically. No drag-and-drop or motion dependency was added. Decision 0013 records the durable interaction model; mobile momentum and broader talk motion remain follow-up work.
 
 # Related Commits
 
-Pending.
+- `68c2989` — scope the Arrange prototype and deferred explorer refinements.
+- `6079818` — add the live Arrange route and dependency-free select-then-insert prototype.
+- `edf36d0` — add live card dragging and rightmost-first deck presentation.
+- `148e90f` — add exact random shuffle animation, touch arbitration, reduced motion, cancellation, and haptics.
+- `701ced3` — synchronize shareable deck URLs and restore post-shuffle drag lift.

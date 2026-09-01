@@ -5,7 +5,7 @@
 
 ## Context
 
-The site currently opens on a static hero page (`/`) that links to the explorer (`/explore`) — a marketing-style landing in front of the thing visitors came for. The explorer itself sits in a nested scroll pane, so even after navigating there, the page chrome stays bolted on screen and the feed scrolls inside a box. The intended experience is closer to everyuuid.com: you arrive, you scroll, you are already browsing decks.
+At decision time, the site opened on a static hero page (`/`) that linked to the explorer (`/explore`) — a marketing-style landing in front of the thing visitors came for. The explorer itself sat in a nested scroll pane, so even after navigating there, the page chrome stayed bolted on screen and the feed scrolled inside a box. The intended experience was closer to everyuuid.com: you arrive, you scroll, you are already browsing decks.
 
 ## Decision
 
@@ -20,7 +20,7 @@ The explorer is the home page. `/` renders a compact hero (wordmark-scale headin
 ## Consequences
 
 - Shareable `?deck=` links keep working through the redirect; any spec or doc referencing `/explore` is updated in the same change.
-- The deck editor and any future pages build against the pinned-controls layout.
+- Arrange and future pages build against the resulting masthead and explorer-first navigation layout; Arrange shipped at `/arrange` as a separate single-deck surface.
 - Independent of the scroll-model decision (0009): this decides _where_ the explorer lives and its chrome; 0009 decides _how_ it scrolls.
 
 ## Evidence

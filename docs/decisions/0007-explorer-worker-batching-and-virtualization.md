@@ -5,7 +5,7 @@
 
 ## Context
 
-The explorer is the site's centerpiece: a scrollable feed over all `52!` deck orderings. Two hard constraints shape it. First, `52! ≈ 8.07 × 10^67` far exceeds what any DOM or JavaScript `number` can represent, so the feed cannot be a real scroll region of `52!` rows. Second, computing a deck ordering means unranking a `bigint` index through the factoradic algorithm, which is pure but non-trivial; doing it on the main thread at scroll-frame rate risks jank and would entangle rendering with permutation mathematics.
+The explorer is the site's centerpiece: a scrollable feed over all `52!` deck orderings. Two hard constraints shape it. First, `52! ≈ 8.07 × 10^67` far exceeds JavaScript Number's exact-integer range and any feasible DOM row count, so the feed cannot be a real scroll region of `52!` rows. Second, computing a deck ordering means unranking a `bigint` index through the factoradic algorithm, which is pure but non-trivial; doing it on the main thread at scroll-frame rate risks jank and would entangle rendering with permutation mathematics.
 
 The architecture document already draws boundaries (`domain`, `worker`, `virtualization`, `ui`) and states the browser cannot create a scroll area with `52!` rows. This record makes those boundaries concrete for the explorer milestone.
 
@@ -13,7 +13,7 @@ The architecture document already draws boundaries (`domain`, `worker`, `virtual
 
 The explorer is built from three separated pieces:
 
-1. **Worker batching.** A dedicated Web Worker receives typed requests `{ startIndex, count }`, unranked contiguous batches with `unrankPermutation`, and posts results back as flat `Uint8Array` card-ID buffers using transferable objects (no structured-clone of card objects). Requests carry a monotonically increasing sequence number; a new request rejects the previous pending client promise, and responses whose sequence is no longer current are dropped. The worker keeps only the latest pending request and yields to its task queue between batch chunks, so newer messages cancel stale work and overwrite intermediate queued requests.
+1. **Worker batching.** A dedicated Web Worker receives typed requests `{ seq, startIndex, count }`, unranked contiguous batches with `unrankPermutation`, and posts results back as flat `Uint8Array` card-ID buffers using transferable objects (no structured-clone of card objects). The monotonically increasing sequence number identifies current work; a new request rejects the previous pending client promise, and responses whose sequence is no longer current are dropped. The worker keeps only the latest pending request and yields to its task queue between batch chunks, so newer messages cancel stale work and overwrite intermediate queued requests.
 
    Within a batch, only the first deck is computed with a full factoradic `unrankPermutation`; every following deck is produced by `nextPermutation`, the domain's in-place lexicographic step from index `i` to `i + 1`. The explorer scrolls through adjacent indices, so stepping replaces each additional factoradic unrank with a comparison sweep and suffix reversal and needs no bigint arithmetic per step. Correctness is verified against independent `unrankPermutation` results; this record makes no throughput magnitude claim. Random access (jump-to-deck) still uses a full unrank, so the bijection remains the source of truth.
 
@@ -31,17 +31,17 @@ The explorer's visual direction is a **minimal instrument**: dark neutral backgr
 
 - **Main-thread unranking of visible rows only.** Simplest to write, but unranking at scroll-frame rate on the UI thread invites jank, merges the rendering and permutation boundaries the architecture forbids, and produces no worker/transport material for the talk. Rejected for the milestone, though the worker's domain calls remain directly testable on the main thread.
 - **Full factoradic unrank for every deck in a batch.** Correct but wasteful: scrolling walks consecutive indices, where each deck is a short lexicographic step from the last. The batch producer unranked the first deck fully, then steps with `nextPermutation`. Random access still unranked directly.
-- **A real scroll element sized to `52!` pixels.** Browsers cap element dimensions around 2^24–2^33 px; `52!` is astronomically beyond that. Not possible.
+- **A real scroll element sized to `52!` pixels.** Browser layout limits are finite and many orders of magnitude below `52!` rows. Not possible.
 - **Percent-based thumb mapping (scroll fraction × 52!).** Loses exact addressability: a fractional scroll position cannot name a specific deck number, and floating-point cannot resolve adjacent indices. The site promises exact decks, so position must be integer `bigint`, not a proportion.
 - **Paging / "next batch" buttons instead of continuous scroll.** Exact and simple, but abandons the feeling of an unbroken space the project exists to create. Continuous exploration is the point.
 
 ## Consequences
 
-- The worker protocol, latest-request coalescing, stale-response suppression, and transferable-buffer transport become reusable talk material and a template for the deck editor's randomize endpoint.
+- The worker protocol, latest-request coalescing, stale-response suppression, and transferable-buffer transport become reusable talk material. Arrange does not use a worker endpoint because it computes only one target ordering at a time.
 - Virtualization logic remains pure and testable without a browser; decision 0009 replaces the anchor/recentering functions with virtual-position, fraction, interpolation, and strip math.
 - The explorer never stores or enumerates the space; memory stays bounded regardless of position.
 - Card availability is bounded by batch latency; overscan and stale-response suppression keep rendering bounded, and any performance claim requires a reproducible benchmark before it is made.
-- The public deck-number URL format is established here and will be shared with the deck editor.
+- The public deck-number URL format established here is shared by `/arrange`.
 
 ## Evidence
 

@@ -3,11 +3,11 @@ import { DECK_COUNT } from './deck-number.ts'
 /**
  * Uniformly random permutation index over `0 .. DECK_COUNT - 1`.
  *
- * Entropy comes from an injected byte source so the draw is pure and
- * testable; the production adapter supplies `crypto.getRandomValues`. Drawn
- * bytes are read as a big-endian integer and rejected when they fall at or
- * above the largest multiple of `DECK_COUNT` that fits in the byte width, so
- * the result is uniform with no modulo bias.
+ * Entropy comes from an injected byte source so the algorithm is
+ * platform-independent and testable; a platform adapter supplies production
+ * entropy. Drawn bytes are read as a big-endian integer and rejected when they
+ * fall at or above the largest multiple of `DECK_COUNT` that fits in the byte
+ * width, so the result is uniform with no modulo bias.
  *
  * `DECK_COUNT` (52!) is about 2^226, so 32 bytes (256 bits) give an
  * acceptance rate above 99.999% — rejection is essentially never observed in
@@ -43,13 +43,7 @@ export function randomPermutationIndex(entropy: EntropySource): bigint {
     }
   }
 
-  // Unreachable with a correct entropy source: a single draw is accepted with
-  // probability > 1 - 2^-29, so 1024 consecutive rejections cannot occur.
+  // A single draw is accepted with probability > 1 - 2^-29, so 1024
+  // consecutive rejections are possible but astronomically unlikely.
   throw new Error('Entropy source never produced an acceptable draw')
-}
-
-/** Production entropy adapter backed by the platform CSPRNG. */
-export function cryptoEntropy(bytes: Uint8Array<ArrayBuffer>): Uint8Array {
-  crypto.getRandomValues(bytes)
-  return bytes
 }
