@@ -5,12 +5,24 @@ test.describe('Arrange prototype', () => {
     await page.goto('/arrange')
 
     const number = page.getByRole('status')
+    const ace = page.getByRole('button', { name: 'Select ace of spades' })
+    const two = page.getByRole('button', { name: 'Select two of spades' })
     await expect(page.locator('.arrange-card')).toHaveCount(52)
     await expect(number).toHaveText('Deck number1')
 
-    await page
-      .getByRole('button', { name: 'Select ace of spades' })
-      .click({ position: { x: 6, y: 12 } })
+    const [aceBox, twoBox, aceStack, twoStack] = await Promise.all([
+      ace.boundingBox(),
+      two.boundingBox(),
+      ace.evaluate((element) => Number(getComputedStyle(element).zIndex)),
+      two.evaluate((element) => Number(getComputedStyle(element).zIndex)),
+    ])
+    if (aceBox === null || twoBox === null) {
+      throw new Error('Arrange card geometry is unavailable')
+    }
+    expect(aceBox.x).toBeGreaterThan(twoBox.x)
+    expect(aceStack).toBeGreaterThan(twoStack)
+
+    await ace.click({ position: { x: 6, y: 12 } })
     await page
       .getByRole('button', {
         name: /Move selected card to position 2, before two of spades/,
@@ -20,6 +32,32 @@ test.describe('Arrange prototype', () => {
     await expect(number).not.toHaveText('Deck number1')
     await page.getByRole('button', { name: 'Reset deck' }).click()
     await expect(number).toHaveText('Deck number1')
+  })
+
+  test('updates the number while a card is being dragged', async ({ page }) => {
+    await page.goto('/arrange')
+
+    const ace = page.getByRole('button', { name: 'Select ace of spades' })
+    const five = page.getByRole('button', { name: 'Select five of spades' })
+    const [aceBox, fiveBox] = await Promise.all([
+      ace.boundingBox(),
+      five.boundingBox(),
+    ])
+
+    if (aceBox === null || fiveBox === null) {
+      throw new Error('Arrange card geometry is unavailable')
+    }
+
+    await page.mouse.move(aceBox.x + 6, aceBox.y + 12)
+    await page.mouse.down()
+    await page.mouse.move(fiveBox.x + 6, fiveBox.y + 12, { steps: 8 })
+
+    await expect(ace).toHaveClass(/dragging/)
+    await expect(page.getByRole('status')).not.toHaveText('Deck number1')
+
+    await page.mouse.up()
+    await expect(ace).not.toHaveClass(/dragging/)
+    await expect(page.getByRole('status')).not.toHaveText('Deck number1')
   })
 
   test('preserves readable cards in a contained mobile track', async ({

@@ -264,15 +264,18 @@ h1 span {
   min-height: calc(var(--card-width) * 1.55);
 }
 
+/* Match the explorer and a physical new deck: position zero is the rightmost
+   face-up card, with each later card stepping left underneath it. */
 .arrange-card {
   position: absolute;
   bottom: clamp(1.25rem, 4vh, 3rem);
-  left: calc(var(--position) * (100% - var(--card-width)) / 51);
+  right: calc(var(--position) * (100% - var(--card-width)) / 51);
   padding: 0;
   border: 0;
   border-radius: calc(var(--card-width) * 0.09);
   background: transparent;
   cursor: pointer;
+  touch-action: pan-x;
   transition:
     transform 140ms ease,
     filter 140ms ease;
@@ -289,6 +292,13 @@ h1 span {
 .arrange-card:focus-visible .playing-card,
 .arrange-card.selected .playing-card {
   box-shadow: 0 0 0 3px #d6aa5d;
+}
+
+.arrange-card.dragging {
+  cursor: grabbing;
+  filter: drop-shadow(0 0.9rem 0.8rem rgb(0 0 0 / 55%));
+  transform: translateY(-1.2rem);
+  transition: none;
 }
 
 @media (width >= 80rem) {
