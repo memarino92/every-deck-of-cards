@@ -23,7 +23,7 @@
   },
   "dependencies": {
     "@solidjs/router": "2.0.0-next.19",
-    "@solidjs/web": "2.0.0-rc.4",
+    "@solidjs/web": "2.0.0-rc.5",
     "solid-js": "2.0.0-rc.4"
   },
   "devDependencies": {
