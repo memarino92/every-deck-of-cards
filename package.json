@@ -29,14 +29,14 @@
   "devDependencies": {
     "@playwright/test": "1.62.1",
     "@solidjs/testing-library": "1.0.0-beta.2",
-    "@solidjs/vite-plugin": "3.0.0-next.35",
-    "@types/node": "26.3.0",
+    "@solidjs/vite-plugin": "3.0.0-next.37",
+    "@types/node": "26.4.1",
     "eslint": "10.9.1",
-    "eslint-plugin-solid": "0.16.1",
+    "eslint-plugin-solid": "0.17.0",
     "jsdom": "30.0.1",
     "typescript": "7.0.2",
     "vite": "catalog:",
-    "wrangler": "4.127.0",
+    "wrangler": "4.128.0",
     "vite-plus": "catalog:"
   }
 }
