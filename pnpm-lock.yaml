@@ -21,8 +21,8 @@ importers:
   .:
     dependencies:
       '@solidjs/router':
-        specifier: 2.0.0-next.19
-        version: 2.0.0-next.19(@solidjs/web@2.0.0-rc.4(solid-js@2.0.0-rc.4))(solid-js@2.0.0-rc.4)
+        specifier: 2.0.0-next.21
+        version: 2.0.0-next.21(@solidjs/web@2.0.0-rc.4(solid-js@2.0.0-rc.4))(solid-js@2.0.0-rc.4)
       '@solidjs/web':
         specifier: 2.0.0-rc.4
         version: 2.0.0-rc.4(solid-js@2.0.0-rc.4)
@@ -976,11 +976,11 @@ packages:
   '@solidjs/compiler@2.0.0-rc.4':
     resolution: {integrity: sha512-lKx6Jp1KbHxqO+v+g7cRbm8I1DHx/10Lj8bKG4vmdGnCfSlFbyhCd8cPTLdLV0YVG7GGSzzF5m8NkC9NlfGN5w==}
 
-  '@solidjs/router@2.0.0-next.19':
-    resolution: {integrity: sha512-IEsDyYKZTk/vPiVd1IEOj3ypdDsACP/DHBxHhIroHOwWWBLmK17Xwp64eqf3prbnxO5SJbJbXAs1Im7HAHNRfQ==}
+  '@solidjs/router@2.0.0-next.21':
+    resolution: {integrity: sha512-sU9n6HsWpkHN0EmT5/r7z2uXzqlIWFJEJMe3V0MXCe19S4Gc8j33sSNZzrF431uOXwUQ+/KPKU4ChzcPQPDoEw==}
     peerDependencies:
-      '@solidjs/web': ^2.0.0-rc.4
-      solid-js: ^2.0.0-rc.4
+      '@solidjs/web': ^2.0.0-rc.5
+      solid-js: ^2.0.0-rc.5
 
   '@solidjs/signals@2.0.0-rc.4':
     resolution: {integrity: sha512-l7P0g8+2pnNscaIPOGDMhv0boaidGAsvR8QN66JySIWNMvVnuq2ayv7ZnvP+IR00DJC+RqCNnnTG/UCdxf+h8g==}
@@ -3012,7 +3012,7 @@ snapshots:
       '@solidjs/compiler-wasm32-wasi': 2.0.0-rc.4
       '@solidjs/compiler-win32-x64-msvc': 2.0.0-rc.4
 
-  '@solidjs/router@2.0.0-next.19(@solidjs/web@2.0.0-rc.4(solid-js@2.0.0-rc.4))(solid-js@2.0.0-rc.4)':
+  '@solidjs/router@2.0.0-next.21(@solidjs/web@2.0.0-rc.4(solid-js@2.0.0-rc.4))(solid-js@2.0.0-rc.4)':
     dependencies:
       '@solidjs/web': 2.0.0-rc.4(solid-js@2.0.0-rc.4)
       solid-js: 2.0.0-rc.4
