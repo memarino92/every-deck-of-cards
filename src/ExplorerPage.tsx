@@ -43,6 +43,12 @@ const ROW_HEIGHT = 148
 const OVERSCAN_ROWS = 8
 /** Duration of animated jump navigation; direct input is always instant. */
 const JUMP_DURATION_MS = 300
+/** Touch samples older than this do not describe release velocity. */
+const MOMENTUM_SAMPLE_WINDOW_MS = 100
+const MOMENTUM_RELEASE_IDLE_MS = 80
+const MOMENTUM_DECAY_PER_MS = 0.004
+const MOMENTUM_MIN_VELOCITY_PX_PER_MS = 0.02
+const MOMENTUM_MAX_VELOCITY_PX_PER_MS = 4
 
 const WHEEL_DELTA_LINE = 1
 const WHEEL_DELTA_PAGE = 2
@@ -119,11 +125,12 @@ function DeckRow(props: DeckRowProps) {
 /**
  * The explorer holds its scroll position as application state (decision
  * 0009): `position` names the deck under the feed's top edge plus a
- * sub-row pixel offset. Wheel, keyboard, touch-drag, and the custom
- * scrollbar rail all advance the position directly, so input never waits on
- * the worker; only card faces load asynchronously. Programmatic navigation
- * (Jump, Random, Go to start/end) animates the position with
- * `requestAnimationFrame` and always lands exactly on the requested deck.
+ * sub-row pixel offset. Wheel, keyboard, touch, and the custom scrollbar rail
+ * all advance the position directly, so input never waits on the worker;
+ * touch flicks continue with bounded momentum after release. Only card faces
+ * load asynchronously. Programmatic navigation (Jump, Random, Go to
+ * start/end) animates the position with `requestAnimationFrame` and always
+ * lands exactly on the requested deck.
  */
 interface ExplorerPageProps {
   readonly intro?: JSX.Element
@@ -273,10 +280,12 @@ export function ExplorerPage(props: ExplorerPageProps = {}) {
   // --- Animated navigation ------------------------------------------------
 
   let animationFrame: number | undefined
+  let momentumFrame: number | undefined
   // Exposed as `data-animating` on the feed: observable animation state, so
   // tests (and any future chrome) can tell a running glide from a settled
   // feed without timing guesses.
   const [animating, setAnimating] = createSignal(false)
+  const [momentumScrolling, setMomentumScrolling] = createSignal(false)
 
   function cancelAnimation(): void {
     if (animationFrame !== undefined) {
@@ -284,6 +293,81 @@ export function ExplorerPage(props: ExplorerPageProps = {}) {
       animationFrame = undefined
       setAnimating(false)
     }
+  }
+
+  function cancelMomentum(): void {
+    if (momentumFrame !== undefined) {
+      cancelAnimationFrame(momentumFrame)
+      momentumFrame = undefined
+      setMomentumScrolling(false)
+    }
+  }
+
+  function cancelMotion(): void {
+    cancelAnimation()
+    cancelMomentum()
+  }
+
+  function startMomentum(initialVelocity: number): void {
+    cancelMomentum()
+
+    if (
+      prefersReducedMotion() ||
+      typeof requestAnimationFrame !== 'function' ||
+      Math.abs(initialVelocity) < MOMENTUM_MIN_VELOCITY_PX_PER_MS
+    ) {
+      return
+    }
+
+    let velocity = Math.max(
+      -MOMENTUM_MAX_VELOCITY_PX_PER_MS,
+      Math.min(MOMENTUM_MAX_VELOCITY_PX_PER_MS, initialVelocity),
+    )
+    let previousTime = performance.now()
+    setMomentumScrolling(true)
+
+    const step = (now: number): void => {
+      const elapsed = Math.max(0, now - previousTime)
+
+      if (elapsed === 0) {
+        momentumFrame = requestAnimationFrame(step)
+        return
+      }
+
+      previousTime = now
+      const decay = Math.exp(-MOMENTUM_DECAY_PER_MS * elapsed)
+      const delta = (velocity * (1 - decay)) / MOMENTUM_DECAY_PER_MS
+      const currentPosition = position()
+      const reachedStart =
+        delta < 0 &&
+        introOffset() === 0 &&
+        currentPosition.topIndex === 0n &&
+        currentPosition.offsetPx === 0
+      const reachedEnd =
+        delta > 0 &&
+        introOffset() >= introHeight() &&
+        currentPosition.topIndex === maxTopIndex(visibleRows()) &&
+        currentPosition.offsetPx === endOffset()
+
+      if (reachedStart || reachedEnd) {
+        momentumFrame = undefined
+        setMomentumScrolling(false)
+        return
+      }
+
+      advanceSurface(delta)
+      velocity *= decay
+
+      if (Math.abs(velocity) < MOMENTUM_MIN_VELOCITY_PX_PER_MS) {
+        momentumFrame = undefined
+        setMomentumScrolling(false)
+        return
+      }
+
+      momentumFrame = requestAnimationFrame(step)
+    }
+
+    momentumFrame = requestAnimationFrame(step)
   }
 
   /**
@@ -295,7 +379,7 @@ export function ExplorerPage(props: ExplorerPageProps = {}) {
    * animation deterministically.
    */
   function animateTo(target: FeedPosition): void {
-    cancelAnimation()
+    cancelMotion()
 
     const currentTarget = (): FeedPosition => {
       const height = viewportHeight()
@@ -483,7 +567,7 @@ export function ExplorerPage(props: ExplorerPageProps = {}) {
     }
 
     event.preventDefault()
-    cancelAnimation()
+    cancelMotion()
 
     const scale =
       event.deltaMode === WHEEL_DELTA_LINE
@@ -513,7 +597,7 @@ export function ExplorerPage(props: ExplorerPageProps = {}) {
 
     if (event.key === 'Home' || event.key === 'End') {
       event.preventDefault()
-      cancelAnimation()
+      cancelMotion()
       if (event.key === 'Home') {
         setPosition(createPosition(0n, 0))
         setIntroOffset(0)
@@ -538,28 +622,40 @@ export function ExplorerPage(props: ExplorerPageProps = {}) {
     }
 
     event.preventDefault()
-    cancelAnimation()
+    cancelMotion()
     advanceSurface(delta)
   }
 
   // Touch dragging advances the same unified intro/deck position as wheel and
-  // keyboard input. Multi-touch remains native for browser zoom gestures.
+  // keyboard input; recent samples provide release momentum. Multi-touch
+  // remains native for browser zoom gestures.
   let touchDragY: number | undefined
   let touchDragIdentifier: number | undefined
+  let touchSamples: { readonly y: number; readonly time: number }[] = []
+
+  function resetTouchDrag(): void {
+    touchDragY = undefined
+    touchDragIdentifier = undefined
+    touchSamples = []
+  }
 
   function handleFeedTouchStart(event: TouchEvent): void {
+    cancelMotion()
+
     if (event.touches.length !== 1) {
-      endTouchDrag()
+      resetTouchDrag()
       return
     }
 
     touchDragIdentifier = event.touches[0]?.identifier
     touchDragY = event.touches[0]?.clientY
+    touchSamples =
+      touchDragY === undefined ? [] : [{ y: touchDragY, time: event.timeStamp }]
   }
 
   function handleFeedTouchMove(event: TouchEvent): void {
     if (event.touches.length !== 1 || touchDragIdentifier === undefined) {
-      endTouchDrag()
+      resetTouchDrag()
       return
     }
 
@@ -573,15 +669,43 @@ export function ExplorerPage(props: ExplorerPageProps = {}) {
 
     const delta = touchDragY - currentY
     touchDragY = currentY
+    const now = event.timeStamp
+    touchSamples.push({ y: currentY, time: now })
+    const sampleWindowStart = now - MOMENTUM_SAMPLE_WINDOW_MS
+    const firstRecentSample = touchSamples.findIndex(
+      (sample) => sample.time >= sampleWindowStart,
+    )
+    touchSamples = touchSamples.slice(Math.max(0, firstRecentSample - 1))
+    const predecessor = touchSamples[0]
+    if (predecessor !== undefined && predecessor.time < sampleWindowStart) {
+      touchSamples[0] = { y: predecessor.y, time: sampleWindowStart }
+    }
 
     event.preventDefault()
-    cancelAnimation()
+    cancelMotion()
     advanceSurface(delta)
   }
 
-  function endTouchDrag(): void {
-    touchDragY = undefined
-    touchDragIdentifier = undefined
+  function finishTouchDrag(event: TouchEvent): void {
+    const first = touchSamples[0]
+    const last = touchSamples.at(-1)
+    const releasedAt = event.timeStamp
+
+    resetTouchDrag()
+
+    if (
+      first === undefined ||
+      last === undefined ||
+      first === last ||
+      releasedAt - last.time > MOMENTUM_RELEASE_IDLE_MS
+    ) {
+      return
+    }
+
+    const elapsed = last.time - first.time
+    if (elapsed > 0) {
+      startMomentum((first.y - last.y) / elapsed)
+    }
   }
 
   // The rail maps percent-of-space to an exact position (decision 0009). The
@@ -619,7 +743,7 @@ export function ExplorerPage(props: ExplorerPageProps = {}) {
     }
 
     event.preventDefault()
-    cancelAnimation()
+    cancelMotion()
     railDragging = true
     railEl.setPointerCapture(event.pointerId)
 
@@ -725,7 +849,7 @@ export function ExplorerPage(props: ExplorerPageProps = {}) {
       explorerEl?.removeEventListener('touchmove', handleFeedTouchMove)
       globalThis.removeEventListener('resize', updateRailGeometry)
       observer?.disconnect()
-      cancelAnimation()
+      cancelMotion()
     }
   })
 
@@ -783,8 +907,8 @@ export function ExplorerPage(props: ExplorerPageProps = {}) {
       data-intro-visible={introOffset() < introHeight() || undefined}
       onKeyDown={handleKeyDown}
       onTouchStart={handleFeedTouchStart}
-      onTouchEnd={endTouchDrag}
-      onTouchCancel={endTouchDrag}
+      onTouchEnd={finishTouchDrag}
+      onTouchCancel={resetTouchDrag}
     >
       <div
         ref={assignIntroEl}
@@ -848,6 +972,7 @@ export function ExplorerPage(props: ExplorerPageProps = {}) {
         tabindex="0"
         aria-label="Deck feed: every deck, in order"
         data-animating={animating() || undefined}
+        data-momentum={momentumScrolling() || undefined}
         style={{ top: `${feedTop()}px` }}
       >
         <div
