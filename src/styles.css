@@ -181,11 +181,6 @@ h1 span {
   margin-bottom: 0.75rem;
 }
 
-.arrange-title {
-  font-size: clamp(3.5rem, 8vw, 7rem);
-  line-height: 0.8;
-}
-
 .arrange-actions {
   display: flex;
   align-items: center;

@@ -568,12 +568,9 @@ export function ArrangePage(props: ArrangePageProps = {}) {
       data-shuffling={isShuffling() ? '' : undefined}
     >
       <div class="arrange-heading">
-        <div>
-          <p class="eyebrow">Arrange one exact shuffle</p>
-          <h1 id="arrange-title" class="arrange-title">
-            Deck
-          </h1>
-        </div>
+        <p class="eyebrow" id="arrange-title">
+          Arrange one exact shuffle
+        </p>
 
         <div class="arrange-actions">
           <p class="arrange-instructions" id="arrange-instructions">
