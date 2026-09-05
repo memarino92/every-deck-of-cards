@@ -22,7 +22,7 @@ This project is inspired by playful attempts to make impossibly large spaces fee
 
 [Arrange](https://everydeckof.cards/arrange) presents one rightmost-first 52-card spread and its exact one-based deck number. Reorder cards with mouse or pen drag, a touch long press, or keyboard/tap select-then-insert; the number updates from the same reversible ranking function used by the explorer. Settled decks synchronize to the explorer-compatible `?deck=` query parameter, so links are exact and browser Back/Forward restores earlier orderings.
 
-**Shuffle** draws an unbiased target with Web Crypto, then moves the cards to that exact permutation with the native Web Animations API. Intermediate geometry displays `Shuffling...`; reduced-motion preferences settle immediately. No drag-and-drop or motion package is required. On touch, movement before the long-press threshold pans the spread manually; momentum remains a known mobile refinement.
+**Shuffle** draws an unbiased target with Web Crypto, then moves the cards to that exact permutation with the native Web Animations API. Intermediate geometry displays `Shuffling...`; reduced-motion preferences settle immediately. No drag-and-drop or motion package is required. On touch, movement before the long-press threshold pans the spread manually and a quick release continues with bounded momentum.
 
 ## Technology
 

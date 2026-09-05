@@ -20,6 +20,11 @@ const SHUFFLE_DURATION_MS = 760
 const TOUCH_LONG_PRESS_MS = 420
 const TOUCH_SLOP_PX = 8
 const TOUCH_DRAG_HAPTIC_MS = 12
+const MOMENTUM_SAMPLE_WINDOW_MS = 100
+const MOMENTUM_RELEASE_IDLE_MS = 80
+const MOMENTUM_DECAY_PER_MS = 0.004
+const MOMENTUM_MIN_VELOCITY_PX_PER_MS = 0.02
+const MOMENTUM_MAX_VELOCITY_PX_PER_MS = 4
 
 export function moveCard<T>(
   ordering: readonly T[],
@@ -103,6 +108,7 @@ export function ArrangePage(props: ArrangePageProps = {}) {
   const [selectedIndex, setSelectedIndex] = createSignal<number>()
   const [draggedId, setDraggedId] = createSignal<CardId>()
   const [isShuffling, setIsShuffling] = createSignal(false)
+  const [momentumScrolling, setMomentumScrolling] = createSignal(false)
   const deckNumber = createMemo(() =>
     permutationIndexToPublicDeckNumber(
       rankPermutation(CANONICAL_DECK, ordering()),
@@ -123,6 +129,7 @@ export function ArrangePage(props: ArrangePageProps = {}) {
         readonly initialOrdering: readonly CardId[]
         readonly pointerType: string
         readonly startScrollLeft: number
+        panSamples: { readonly x: number; readonly time: number }[]
         longPressTimer: ReturnType<typeof setTimeout> | undefined
         currentIndex: number
         dragging: boolean
@@ -132,6 +139,68 @@ export function ArrangePage(props: ArrangePageProps = {}) {
 
   const assignSpreadTrack = (element: HTMLDivElement): void => {
     spreadTrack = element
+  }
+
+  let momentumFrame: number | undefined
+
+  const cancelPanMomentum = (): void => {
+    if (momentumFrame !== undefined) {
+      cancelAnimationFrame(momentumFrame)
+      momentumFrame = undefined
+      setMomentumScrolling(false)
+    }
+  }
+
+  const startPanMomentum = (initialVelocity: number): void => {
+    cancelPanMomentum()
+
+    const spread = spreadTrack?.parentElement
+    if (
+      spread === null ||
+      spread === undefined ||
+      (props.reducedMotion ?? prefersReducedMotion()) ||
+      typeof requestAnimationFrame !== 'function' ||
+      Math.abs(initialVelocity) < MOMENTUM_MIN_VELOCITY_PX_PER_MS
+    ) {
+      return
+    }
+
+    let velocity = Math.max(
+      -MOMENTUM_MAX_VELOCITY_PX_PER_MS,
+      Math.min(MOMENTUM_MAX_VELOCITY_PX_PER_MS, initialVelocity),
+    )
+    let previousTime = performance.now()
+    setMomentumScrolling(true)
+
+    const step = (now: number): void => {
+      const elapsed = Math.max(0, now - previousTime)
+
+      if (elapsed === 0) {
+        momentumFrame = requestAnimationFrame(step)
+        return
+      }
+
+      previousTime = now
+      const decay = Math.exp(-MOMENTUM_DECAY_PER_MS * elapsed)
+      const delta = (velocity * (1 - decay)) / MOMENTUM_DECAY_PER_MS
+      const previousScrollLeft = spread.scrollLeft
+
+      spread.scrollLeft += delta
+      velocity *= decay
+
+      if (
+        spread.scrollLeft === previousScrollLeft ||
+        Math.abs(velocity) < MOMENTUM_MIN_VELOCITY_PX_PER_MS
+      ) {
+        momentumFrame = undefined
+        setMomentumScrolling(false)
+        return
+      }
+
+      momentumFrame = requestAnimationFrame(step)
+    }
+
+    momentumFrame = requestAnimationFrame(step)
   }
 
   const clearDrag = (): void => {
@@ -169,6 +238,7 @@ export function ArrangePage(props: ArrangePageProps = {}) {
   }
 
   const cancelShuffle = (syncTarget = true): void => {
+    cancelPanMomentum()
     const wasShuffling = isShuffling()
     shuffleRun += 1
     for (const animation of shuffleAnimations) {
@@ -214,6 +284,7 @@ export function ArrangePage(props: ArrangePageProps = {}) {
       clearTimeout(suppressClickTimer)
     }
     shuffleRun += 1
+    cancelPanMomentum()
     for (const animation of shuffleAnimations) {
       animation.cancel()
     }
@@ -240,6 +311,7 @@ export function ArrangePage(props: ArrangePageProps = {}) {
       initialOrdering: ordering(),
       pointerType: event.pointerType,
       startScrollLeft: spreadTrack?.parentElement?.scrollLeft ?? 0,
+      panSamples: [{ x: event.clientX, time: event.timeStamp }],
       longPressTimer: undefined as ReturnType<typeof setTimeout> | undefined,
       currentIndex: position,
       dragging: false,
@@ -275,6 +347,12 @@ export function ArrangePage(props: ArrangePageProps = {}) {
     }
 
     if (!session.dragging && session.pointerType === 'touch') {
+      const now = event.timeStamp
+      session.panSamples.push({ x: event.clientX, time: now })
+      session.panSamples = session.panSamples.filter(
+        (sample) => sample.time >= now - MOMENTUM_SAMPLE_WINDOW_MS,
+      )
+
       const distance = Math.hypot(
         event.clientX - session.startX,
         event.clientY - session.startY,
@@ -344,6 +422,21 @@ export function ArrangePage(props: ArrangePageProps = {}) {
     }
     if (session.dragging) {
       syncDeckParam(ordering())
+    } else if (session.panning) {
+      const first = session.panSamples[0]
+      const last = session.panSamples.at(-1)
+
+      if (
+        first !== undefined &&
+        last !== undefined &&
+        first !== last &&
+        event.timeStamp - last.time <= MOMENTUM_RELEASE_IDLE_MS
+      ) {
+        const elapsed = last.time - first.time
+        if (elapsed > 0) {
+          startPanMomentum((first.x - last.x) / elapsed)
+        }
+      }
     }
 
     clearDrag()
@@ -501,7 +594,13 @@ export function ArrangePage(props: ArrangePageProps = {}) {
         {isShuffling() ? 'Shuffling...' : deckNumber().toLocaleString('en-US')}
       </output>
 
-      <div class="arrange-spread" aria-describedby="arrange-instructions">
+      <div
+        class="arrange-spread"
+        aria-describedby="arrange-instructions"
+        data-momentum={momentumScrolling() || undefined}
+        onPointerDown={cancelPanMomentum}
+        onWheel={cancelPanMomentum}
+      >
         <div class="arrange-spread-track" ref={assignSpreadTrack}>
           <For each={ordering()}>
             {(id, position) => {

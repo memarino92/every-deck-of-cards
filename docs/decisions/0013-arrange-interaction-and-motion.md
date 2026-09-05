@@ -12,7 +12,7 @@ The Solid ecosystem's prominent drag package, [`@thisbeyond/solid-dnd` 0.7.5](ht
 ## Decision
 
 - `/arrange` owns one local card-ID ordering and ranks it synchronously. Position zero is the rightmost, topmost card, matching the explorer and physical new-deck presentation.
-- Each card remains a semantic button. Mouse and pen use Pointer Events for live insertion; keyboard and tap use select-then-insert. On touch, a stationary long press activates drag, earlier movement manually pans the spread, and activation requests a brief best-effort Vibration API cue.
+- Each card remains a semantic button. Mouse and pen use Pointer Events for live insertion; keyboard and tap use select-then-insert. On touch, a stationary long press activates drag, earlier movement manually pans the spread, a quick pan release continues with bounded time-based momentum, and activation requests a brief best-effort Vibration API cue. New input and Arrange actions cancel momentum; native `scrollLeft` clamping remains authoritative; reduced-motion preference keeps panning one-to-one.
 - Settled orderings use the explorer's one-based `?deck=` parameter. Initial navigation and Back/Forward unrank that parameter; drag crossings do not write history, while release and other settled actions do.
 - Shuffle draws one unbiased index through the platform-independent injected-entropy domain algorithm and a Web Crypto platform adapter. The UI commits that exact target and uses the Web Animations API to move keyed cards from old slots to new slots. Intermediate geometry displays `Shuffling...`; reduced motion settles immediately; interruption cancels motion deterministically.
 - No drag-and-drop or motion dependency is added.
@@ -20,14 +20,14 @@ The Solid ecosystem's prominent drag package, [`@thisbeyond/solid-dnd` 0.7.5](ht
 ## Consequences
 
 - Rendering owns pointer capture, gesture arbitration, haptics, animation lifecycle, and cancellation; domain code remains independent of Solid and browser APIs.
-- Manual touch panning has no momentum. Native-feeling inertia and broader mobile layout refinement remain follow-up work.
+- Manual touch panning and its dependency-free momentum remain in the rendering/input boundary. They do not affect card ordering, ranking, worker boundaries, or URL state. Broader mobile layout refinement remains follow-up work.
 - Browser behavior requires Playwright coverage. Pure tests cover reorder coordinates, ranking, target selection, and deterministic reduced-motion settlement.
 - The Web Animations approach is sufficient for Arrange. Broader talk-diagram motion needs remain a separate future evaluation rather than an editor dependency requirement.
 
 ## Evidence
 
 - `src/ArrangePage.test.tsx` covers reorder math, pointer-position mapping, split shuffle directions, exact query initialization, live ranking, reset, and deterministic reduced-motion settlement.
-- `e2e/arrange.spec.ts` covers keyboard reordering and focus, mouse and long-press touch drag, touch panning, haptic activation, post-shuffle drag lift, shareable URLs and history, exact shuffle settlement, cancellation, reduced motion, and mobile geometry.
+- `e2e/arrange.spec.ts` covers keyboard reordering and focus, mouse and long-press touch drag, touch panning, haptic activation, post-shuffle drag lift, shareable URLs and history, exact shuffle settlement, cancellation, reduced motion, and mobile geometry. `e2e/arrange-momentum.spec.ts` covers post-release continuation, wheel cancellation, reduced-motion panning, and both horizontal bounds.
 - Completion evidence and merged commits are recorded in the completed deck-editor plan.
 
 ## Related Material
