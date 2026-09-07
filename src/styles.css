@@ -145,9 +145,9 @@ h1 span {
 
 .home-hero {
   width: min(calc(100% - var(--page-gutter) - var(--page-gutter)), 90rem);
-  min-height: clamp(20rem, 46vh, 28rem);
+  min-height: 0;
   align-content: end;
-  padding: clamp(4rem, 9vh, 7rem) 0;
+  padding: 1.5rem 0 0;
 }
 
 .home-hero h1 {
@@ -160,6 +160,23 @@ h1 span {
   color: #a8b9ae;
   font-size: clamp(1rem, 1.5vw, 1.3rem);
   line-height: 1.5;
+}
+
+@media (width > 760px) {
+  .home-hero {
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+    column-gap: 2rem;
+  }
+
+  .home-hero > .eyebrow,
+  .home-hero > .count {
+    grid-column: 1 / -1;
+  }
+
+  .home-hero > p:not(.eyebrow, .count) {
+    align-self: center;
+    margin: 0;
+  }
 }
 
 .arrange {
@@ -322,7 +339,7 @@ h1 span {
 
   .arrange {
     align-content: start;
-    grid-template-rows: auto auto 12.5rem;
+    grid-template-rows: auto auto minmax(12.5rem, 1fr);
     padding-top: 1.5rem;
   }
 
@@ -351,7 +368,9 @@ h1 span {
   }
 
   .arrange-card {
-    bottom: 1.25rem;
+    top: 50%;
+    bottom: auto;
+    translate: 0 -50%;
   }
 }
 
@@ -366,8 +385,8 @@ h1 span {
   align-content: start;
   width: min(100%, 44rem);
   margin: 0 auto;
-  padding: clamp(2rem, 6vh, 4rem) 0;
-  gap: clamp(2rem, 4vh, 3rem);
+  padding: 1.5rem 0;
+  gap: 1.5rem;
 }
 
 .why-title {
@@ -392,6 +411,10 @@ h1 span {
   margin: 0 0 1rem;
   font-size: clamp(1rem, 1.4vw, 1.2rem);
   line-height: 1.65;
+}
+
+.why > .eyebrow {
+  margin: 0;
 }
 
 .why p:last-child {
@@ -667,7 +690,7 @@ h1 span {
   align-items: end;
   justify-content: space-between;
   gap: 1.25rem 2rem;
-  padding: clamp(0.85rem, 2vh, 1.25rem) var(--page-gutter);
+  padding: 1rem var(--page-gutter);
   border-bottom: 1px solid rgb(244 234 210 / 12%);
   background: rgb(13 51 38 / 96%);
   backdrop-filter: blur(10px);
@@ -692,6 +715,12 @@ h1 span {
   gap: 0.6rem;
   font-family: ui-monospace, 'Cascadia Code', monospace;
   font-size: 0.85rem;
+}
+
+.jump-actions {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.6rem;
 }
 
 .jump label {
@@ -777,7 +806,25 @@ body.explorer-active main {
 }
 
 @media (max-width: 760px) {
+  .home-hero {
+    min-height: 0;
+    padding-block: 1.5rem 0;
+  }
+
+  .home-hero > p:not(.eyebrow, .count) {
+    margin-top: 1.5rem;
+  }
+
+  .home-hero .count {
+    margin-top: 1.5rem;
+  }
+
+  .jump-actions {
+    width: 100%;
+  }
+
   .explorer-bar {
+    padding-top: 1rem;
     align-items: start;
     gap: 0.75rem;
   }

@@ -946,16 +946,18 @@ export function ExplorerPage(props: ExplorerPageProps = {}) {
               onInput={(event) => setJumpValue(event.currentTarget.value)}
             />
           </label>
-          <button type="submit">Jump</button>
-          <button type="button" class="random-button" onClick={randomize}>
-            Random
-          </button>
-          <button type="button" class="end-button" onClick={goToEnd}>
-            Go to end
-          </button>
-          <button type="button" class="start-button" onClick={goToStart}>
-            Go to start
-          </button>
+          <div class="jump-actions">
+            <button type="submit">Jump</button>
+            <button type="button" class="random-button" onClick={randomize}>
+              Random
+            </button>
+            <button type="button" class="start-button" onClick={goToStart}>
+              Go to start
+            </button>
+            <button type="button" class="end-button" onClick={goToEnd}>
+              Go to end
+            </button>
+          </div>
         </form>
 
         <p class="explorer-meta">
