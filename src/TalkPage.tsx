@@ -1,21 +1,21 @@
-import { Show, createSignal, onSettled } from 'solid-js'
-import type { JSX } from '@solidjs/web'
+import { Presentation, type Slide } from './presentation/Presentation.tsx'
 
 import { DECK_COUNT } from './domain/deck-number.ts'
 import { factorial } from './domain/factorial.ts'
 import { compareDeckCountToAtomsOnEarth } from './domain/magnitude.ts'
-import { PermutationTable } from './PermutationTable.tsx'
-import { UnrankStepper } from './UnrankStepper.tsx'
+import { PermutationTable } from './examples/PermutationTable.tsx'
+import { FourCardWalkthrough, UnrankExample } from './examples/CardExamples.tsx'
+import {
+  createWalkthrough,
+  exampleTitle,
+  THREE_CARD_EXAMPLE,
+  FIVE_CARD_EXAMPLE,
+} from './examples/walkthrough.ts'
 
 const atomsComparison = compareDeckCountToAtomsOnEarth()
 
-interface Slide {
-  readonly title: string
-  readonly body: () => JSX.Element
-}
-
 export function TalkPage() {
-  const [fourCardIndex, setFourCardIndex] = createSignal(0n)
+  const fourCards = createWalkthrough({ size: 4, initialIndex: 0n })
 
   const slides: Slide[] = [
     {
@@ -29,7 +29,7 @@ export function TalkPage() {
       ),
     },
     {
-      title: `2 cards, ${factorial(2).toString()} orderings`,
+      title: exampleTitle(2),
       body: () => (
         <>
           <p>Every shuffle of two cards fits in one table.</p>
@@ -38,7 +38,7 @@ export function TalkPage() {
       ),
     },
     {
-      title: `3 cards, ${factorial(3).toString()} orderings`,
+      title: exampleTitle(3),
       body: () => (
         <>
           <p>
@@ -46,32 +46,28 @@ export function TalkPage() {
             blocks of {factorial(2).toString()}. Index 4 ÷ 2 = 2, so card 2
             leads. Watch:
           </p>
-          <UnrankStepper size={3} initialIndex={4n} />
+          <UnrankExample {...THREE_CARD_EXAMPLE} />
         </>
       ),
     },
     {
-      title: `4 cards, ${factorial(4).toString()} orderings`,
+      title: exampleTitle(4),
       body: () => (
         <>
-          <p>Twenty-four orderings, still one screen. Click a row.</p>
-          <PermutationTable
-            size={4}
-            onSelect={(index) => setFourCardIndex(index)}
-          />
-          <UnrankStepper size={4} index={fourCardIndex()} />
+          <p>Twenty-four orderings, still one screen. Select an index.</p>
+          <FourCardWalkthrough model={fourCards} />
         </>
       ),
     },
     {
-      title: `5 cards, ${factorial(5).toString()} orderings`,
+      title: exampleTitle(5),
       body: () => (
         <>
           <p>
             120 rows is where printing the table stops being useful. Index 73:
             73 ÷ 24 = 3 remainder 1, and the recipe keeps going.
           </p>
-          <UnrankStepper size={5} initialIndex={73n} />
+          <UnrankExample {...FIVE_CARD_EXAMPLE} />
         </>
       ),
     },
@@ -89,58 +85,5 @@ export function TalkPage() {
     },
   ]
 
-  const [current, setCurrent] = createSignal(0)
-
-  function advance(delta: number) {
-    setCurrent((value) =>
-      Math.min(slides.length - 1, Math.max(0, value + delta)),
-    )
-  }
-
-  function onKeyDown(event: KeyboardEvent) {
-    if (event.key === 'ArrowRight' || event.key === ' ') {
-      event.preventDefault()
-      advance(1)
-    } else if (event.key === 'ArrowLeft') {
-      event.preventDefault()
-      advance(-1)
-    }
-  }
-
-  onSettled(() => {
-    window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
-  })
-
-  return (
-    <div class="talk">
-      <Show when={slides[current()]} keyed>
-        {(slide) => (
-          <section class="talk-slide" aria-labelledby="talk-slide-title">
-            <p class="talk-progress">
-              {current() + 1} / {slides.length}
-            </p>
-            <h1 id="talk-slide-title">{slide.title}</h1>
-            <div class="talk-body">{slide.body()}</div>
-          </section>
-        )}
-      </Show>
-      <div class="talk-controls">
-        <button
-          type="button"
-          onClick={() => advance(-1)}
-          disabled={current() === 0}
-        >
-          ← Prev
-        </button>
-        <button
-          type="button"
-          onClick={() => advance(1)}
-          disabled={current() === slides.length - 1}
-        >
-          Next →
-        </button>
-      </div>
-    </div>
-  )
+  return <Presentation slides={slides} />
 }
