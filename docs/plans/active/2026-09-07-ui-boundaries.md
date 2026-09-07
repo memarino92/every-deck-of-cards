@@ -25,7 +25,7 @@ Implement the UI audit findings on `codex/ui-boundaries`, preserve the exact dec
 - [x] Create `codex/ui-boundaries` from main at `58ae999`.
 - [x] Complete and verify the walkthrough changes.
 - [x] Complete and verify Explorer/data/shared adapter changes.
-- [ ] Complete and verify Arrange changes.
+- [x] Complete and verify Arrange changes.
 - [ ] Complete shared CSS/geometry and architectural documentation.
 - [ ] Run all quality gates and the full Playwright suite before commits.
 - [ ] Review the complete diff and create cohesive Conventional Commits.
@@ -48,6 +48,7 @@ Add focused behavior tests for walkthrough ownership/replay, keyboard controls, 
 - `.git` is read-only under the workspace sandbox; the requested branch was created through approved execution outside it.
 - The audit's fallback pnpm runner attempted dependency maintenance. Prefer the installed Vite+ CLI and disable that runner behavior when invoking existing package scripts; preserve the lockfile.
 - Port 5173 was occupied. Playwright now accepts `E2E_PORT` and starts its server with `--strictPort`; this run used 5182.
+- Arrange's first browser run caught a synchronous transaction regression: Solid 2 signal reads remain at the committed value until the microtask flush, so moving or resetting and then reading the ordering committed the previous deck to the URL. Editor commands now return their next ordering, and immediate settlement ranks that explicit value. Display memos remain reactive; no forced flush is needed.
 
 # Verification evidence
 
@@ -57,4 +58,7 @@ Explorer commit: Vite+ check, TypeScript, production build, all 164 unit tests, 
 
 # Related commits
 
+Arrange commit: Vite+ check, TypeScript, production build, all 165 unit tests, and all 56 Chromium tests passed after the transaction correction. Existing pointer, long-press, native momentum bounds, animation interruption, reduced-motion, and history tests exercise the extracted owners. The momentum test now inserts a non-layout wrapper between the track and scroller to verify explicit scroller ownership. Unit coverage verifies live previews, cancellation, and immediate and deferred settlement.
+
 - `5012408` — shared walkthrough state and keyboard ownership.
+- `7ebed5e` — Explorer position, input, row loading, and shared adapters.
