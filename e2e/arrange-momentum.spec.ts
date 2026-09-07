@@ -53,6 +53,13 @@ test.describe('Arrange horizontal momentum', () => {
   test('a touch flick continues the spread after release', async ({ page }) => {
     const client = await enableTouch(page)
     await page.goto('/arrange')
+    // A non-layout wrapper must not change which element owns scrolling.
+    await page.locator('.arrange-spread-track').evaluate((track) => {
+      const wrapper = document.createElement('div')
+      wrapper.style.display = 'contents'
+      track.before(wrapper)
+      wrapper.append(track)
+    })
     const spread = page.locator('.arrange-spread')
     await page.evaluate(() => {
       document.addEventListener(
