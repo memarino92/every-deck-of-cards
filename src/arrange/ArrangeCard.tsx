@@ -1,6 +1,7 @@
 import { onCleanup } from 'solid-js'
 import { cardFromId, type CardId } from '../domain/cards.ts'
 import { PlayingCard } from '../PlayingCard.tsx'
+import { spreadSlotStyle } from '../cards/spread.ts'
 import type { ArrangeGestures } from './gestures.ts'
 import type { SpreadGeometry } from './spread-geometry.ts'
 
@@ -41,16 +42,13 @@ export function ArrangeCard(props: {
       ref={(element) => assignCard(element)}
       type="button"
       class={[
-        'arrange-card',
+        'card-slot arrange-card',
         { selected: props.selected, dragging: props.dragging },
       ]}
       aria-label={label()}
       aria-pressed={props.selected ? 'true' : 'false'}
       data-card-id={props.id}
-      style={{
-        '--position': props.position,
-        'z-index': props.count - props.position,
-      }}
+      style={spreadSlotStyle(props.position, props.count)}
       onClick={() => props.gestures.activate(props.position)}
       onPointerDown={(event) =>
         props.gestures.handlePointerDown(event, props.id, props.position)

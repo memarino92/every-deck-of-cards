@@ -5,9 +5,9 @@ const timesLarger = comparison.timesLarger.toLocaleString('en-US')
 
 export function WhyPage() {
   return (
-    <article class="why" aria-labelledby="why-title">
+    <article class="article-layout" aria-labelledby="why-title">
       <p class="eyebrow">Wait, how does this work?</p>
-      <h1 id="why-title" class="why-title">
+      <h1 id="why-title" class="article-title">
         Why does this exist?
       </h1>
 

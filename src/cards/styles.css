@@ -1,0 +1,119 @@
+/* --card-width is supplied by the host; card faces never choose spread geometry. */
+.playing-card {
+  position: relative;
+  display: block;
+  width: var(--card-width);
+  aspect-ratio: 5 / 7;
+  border: 1px solid rgb(13 51 38 / 45%);
+  border-radius: calc(var(--card-width) * 0.09);
+  background: #fbf7ec;
+  color: #1b1b1b;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 45%);
+  font-family: var(--font-serif);
+  user-select: none;
+}
+
+.playing-card.red {
+  color: #a31f2b;
+}
+
+.playing-card .corner {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 0.9;
+  font-weight: 700;
+}
+
+.playing-card .corner-rank {
+  font-size: calc(var(--card-width) * 0.2);
+  letter-spacing: -0.02em;
+}
+
+.playing-card .corner-suit {
+  font-size: calc(var(--card-width) * 0.17);
+}
+
+.playing-card .corner-top {
+  top: calc(var(--card-width) * 0.06);
+  left: calc(var(--card-width) * 0.07);
+}
+
+.playing-card .corner-bottom {
+  right: calc(var(--card-width) * 0.07);
+  bottom: calc(var(--card-width) * 0.06);
+  transform: rotate(180deg);
+}
+
+.playing-card .pips {
+  position: absolute;
+  inset: calc(var(--card-width) * 0.24) calc(var(--card-width) * 0.16);
+}
+
+.playing-card .pip {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  font-size: calc(var(--card-width) * 0.24);
+  line-height: 1;
+}
+
+.playing-card .pips .pip:only-child {
+  font-size: calc(var(--card-width) * 0.5);
+}
+
+.playing-card .court {
+  position: absolute;
+  inset: calc(var(--card-width) * 0.3) calc(var(--card-width) * 0.22);
+  display: flex;
+  flex-direction: column;
+  border: 1px solid currentColor;
+  border-radius: calc(var(--card-width) * 0.06);
+  overflow: hidden;
+}
+
+.playing-card .court-figure {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.playing-card .court-figure-flip {
+  transform: rotate(180deg);
+}
+
+.playing-card .court-glyph {
+  font-size: calc(var(--card-width) * 0.34);
+  line-height: 0.9;
+}
+
+.playing-card .court-figure .court-glyph.glyph-jack {
+  transform: translateX(calc(var(--card-width) * -0.03));
+}
+
+.playing-card .court-figure-flip .court-glyph.glyph-jack {
+  transform: translateX(calc(var(--card-width) * -0.04));
+}
+
+.playing-card .court-emblem {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: calc(var(--card-width) * 0.02);
+  border-radius: 50%;
+  background: #fbf7ec;
+  font-size: calc(var(--card-width) * 0.22);
+  line-height: 1;
+}
+
+/* Position zero is rightmost and topmost. --card-count and --position are
+   supplied by spreadSlotStyle; positionFromPointer is the inverse mapping. */
+.card-slot {
+  position: absolute;
+  right: calc(
+    var(--position) * (100% - var(--card-width)) / max(1, var(--card-count) - 1)
+  );
+}

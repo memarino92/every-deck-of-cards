@@ -1,0 +1,28 @@
+.eyebrow {
+  margin: 0 0 1.5rem;
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: clamp(0.72rem, 1vw, 0.9rem);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+/* Native buttons keep their own semantics; features opt into shared visuals. */
+.action-button {
+  padding: var(--action-padding, 0.4rem 1.1rem);
+  border: 1px solid var(--action-border, var(--gold));
+  border-radius: var(--action-radius, 0.3rem);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+:where(.action-button):hover:not(:disabled),
+:where(.action-button):focus-visible {
+  border-color: var(--action-hover-border, var(--action-border, var(--gold)));
+  background: var(--action-hover, rgb(196 143 53 / 15%));
+}
+.action-button:disabled {
+  opacity: var(--action-disabled-opacity, 0.4);
+  cursor: default;
+}

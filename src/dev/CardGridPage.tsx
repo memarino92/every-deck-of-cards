@@ -1,13 +1,8 @@
 import { useSearchParams } from '@solidjs/router'
 import { createSignal, For } from 'solid-js'
 
-import { cardFromId, type CardId } from '../domain/cards.ts'
+import { CANONICAL_DECK, cardFromId } from '../domain/cards.ts'
 import { PlayingCard } from '../PlayingCard.tsx'
-
-const ALL_IDS: readonly CardId[] = Array.from(
-  { length: 52 },
-  (_, id) => id as CardId,
-)
 
 /**
  * A grid of all 52 card faces for styling iteration. Dev-only route; not
@@ -26,10 +21,10 @@ export function CardGridPage() {
     const rank = rankFilter()
 
     if (rank === undefined) {
-      return ALL_IDS
+      return CANONICAL_DECK
     }
 
-    return ALL_IDS.filter((id) => cardFromId(id).rank === rank)
+    return CANONICAL_DECK.filter((id) => cardFromId(id).rank === rank)
   }
 
   return (

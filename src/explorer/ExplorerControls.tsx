@@ -40,24 +40,26 @@ export function ExplorerControls(props: {
           />
         </label>
         <div class="jump-actions">
-          <button type="submit">Jump</button>
+          <button class="action-button" type="submit">
+            Jump
+          </button>
           <button
             type="button"
-            class="random-button"
+            class="action-button random-button"
             onClick={() => props.onRandom()}
           >
             Random
           </button>
           <button
             type="button"
-            class="start-button"
+            class="action-button start-button"
             onClick={() => props.onStart()}
           >
             Go to start
           </button>
           <button
             type="button"
-            class="end-button"
+            class="action-button end-button"
             onClick={() => props.onEnd()}
           >
             Go to end

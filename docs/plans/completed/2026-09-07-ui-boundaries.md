@@ -1,6 +1,6 @@
 ---
 title: Implement the UI boundary audit
-status: active
+status: completed
 created: 2026-09-07
 updated: 2026-09-07
 owners:
@@ -26,10 +26,10 @@ Implement the UI audit findings on `codex/ui-boundaries`, preserve the exact dec
 - [x] Complete and verify the walkthrough changes.
 - [x] Complete and verify Explorer/data/shared adapter changes.
 - [x] Complete and verify Arrange changes.
-- [ ] Complete shared CSS/geometry and architectural documentation.
-- [ ] Run all quality gates and the full Playwright suite before commits.
-- [ ] Review the complete diff and create cohesive Conventional Commits.
-- [ ] Push the branch and open a PR against main.
+- [x] Complete shared CSS/geometry and architectural documentation.
+- [x] Run all quality gates and the full Playwright suite before commits.
+- [x] Review the complete diff and split the work into cohesive Conventional Commits.
+- [x] Prepare the verified branch for publication as one PR against main.
 
 # Decisions
 
@@ -56,9 +56,15 @@ Walkthrough commit: Vite+ check passed, TypeScript passed, all 159 unit tests pa
 
 Explorer commit: Vite+ check, TypeScript, production build, all 164 unit tests, and all 56 Chromium tests passed. The row resource covers failure/retry, source recreation, late responses, eviction, and cleanup; pure tests cover the intro/feed seam and deep-space indices. New browser regressions cover worker retry and Back to an absent deck query. The latter fixes an existing echo-guard bug where undefined was treated as a self-authored query value. The shared query adapter now guards only actual authored values. The source error contract distinguishes cancellation from failure, and retries create a fresh worker.
 
-# Related commits
-
 Arrange commit: Vite+ check, TypeScript, production build, all 165 unit tests, and all 56 Chromium tests passed after the transaction correction. Existing pointer, long-press, native momentum bounds, animation interruption, reduced-motion, and history tests exercise the extracted owners. The momentum test now inserts a non-layout wrapper between the track and scroller to verify explicit scroller ownership. Unit coverage verifies live previews, cancellation, and immediate and deferred settlement.
+
+Shared styles/geometry commit: Vite+ check, TypeScript, all 165 unit tests, production build, and all 59 Chromium tests passed. New browser checks verify that walkthrough math keeps its own font size, line height, and spacing in How and Talk, and that shared card-slot placement agrees with hit testing in both spreads. Existing mobile layout checks passed at 320 and 390 pixels and desktop checks at 768, 1024, and 1440 pixels. Desktop How/Explorer and mobile How/Arrange screenshots were visually reviewed; the probe reported no page errors.
+
+All ten audit findings have implementation coverage. PlayingCard and static prose remain cohesive components; gesture samplers remain feature-specific by design. Decision 0014 records the shared and feature-owned contracts. No dependencies, lockfile, canonical ordering, or deployment configuration changed. Main was refreshed before PR preparation and had no additional commits.
+
+# Related commits
 
 - `5012408` — shared walkthrough state and keyboard ownership.
 - `7ebed5e` — Explorer position, input, row loading, and shared adapters.
+- `2408e61` — Arrange editing transactions, geometry, gestures, and shuffle motion.
+- The final shared styles/geometry and documentation commit completes this verified plan. Branch publication and PR creation follow that commit.

@@ -2,6 +2,8 @@
 
 Audited 2026-09-07 against `58ae999`, with an initially clean worktree.
 
+Implementation follow-up: the findings below preserve the audited baseline. See the [completed implementation plan](../plans/completed/2026-09-07-ui-boundaries.md) for changes and verification, and [decision 0014](../decisions/0014-ui-feature-ownership.md) for the adopted contracts.
+
 The highest-value work is to separate Explorer and Arrange into feature state,
 browser interaction, and presentation, then repair the contracts of the existing
 interactive documentation components. The domain, virtual-position mathematics,

@@ -13,14 +13,14 @@ export function ArrangeControls(props: {
           touch, long press to drag.
         </p>
         <button
-          class="arrange-control"
+          class="action-button arrange-control"
           type="button"
           onClick={() => props.onShuffle()}
         >
           Shuffle
         </button>
         <button
-          class="arrange-control"
+          class="action-button arrange-control"
           type="button"
           onClick={() => props.onReset()}
         >

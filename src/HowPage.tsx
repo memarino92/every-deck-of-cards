@@ -17,9 +17,9 @@ export function HowPage() {
   const fourCards = createWalkthrough({ size: 4, initialIndex: 0n })
 
   return (
-    <article class="why how" aria-labelledby="how-title">
+    <article class="article-layout" aria-labelledby="how-title">
       <p class="eyebrow">How it works</p>
-      <h1 id="how-title" class="why-title">
+      <h1 id="how-title" class="article-title">
         Every number, one exact shuffle
       </h1>
 

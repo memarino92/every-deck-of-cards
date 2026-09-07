@@ -1,7 +1,7 @@
-import { factorial } from './domain/factorial.ts'
+import { DECK_COUNT } from './domain/deck-number.ts'
 import { ExplorerPage } from './ExplorerPage.tsx'
 
-const deckCount = factorial(52).toLocaleString('en-US')
+const deckCount = DECK_COUNT.toLocaleString('en-US')
 
 export function HomePage() {
   return (

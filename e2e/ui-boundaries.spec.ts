@@ -1,0 +1,80 @@
+import { expect, test } from '@playwright/test'
+import { positionFromPointer } from '../src/cards/spread.ts'
+
+test('walkthrough typography belongs to the example in both article and Talk', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 900 })
+  await page.goto('/how')
+  const math = page.locator('.stepper-math').first()
+  await expect(math).toHaveCSS('font-size', '14.4px')
+  await expect(math).toHaveCSS('margin-bottom', '8px')
+  const articleTypography = await math.evaluate((element) => {
+    const style = getComputedStyle(element)
+    return {
+      font: style.fontSize,
+      line: style.lineHeight,
+      margin: style.marginBottom,
+    }
+  })
+  await expect(page.locator('#how-three + p')).toHaveCSS('font-size', '17.92px')
+
+  await page.goto('/talk')
+  await page.getByRole('button', { name: 'Next →' }).click()
+  await page.getByRole('button', { name: 'Next →' }).click()
+  await expect(page.locator('.stepper-math')).toHaveCSS(
+    'font-size',
+    articleTypography.font,
+  )
+  await expect(page.locator('.stepper-math')).toHaveCSS(
+    'line-height',
+    articleTypography.line,
+  )
+  await expect(page.locator('.stepper-math')).toHaveCSS(
+    'margin-bottom',
+    articleTypography.margin,
+  )
+})
+
+for (const route of ['/?deck=1', '/arrange']) {
+  test(`spread placement and hit testing agree on ${route}`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1440, height: 900 })
+    await page.goto(route)
+    const track = page
+      .locator(route === '/arrange' ? '.arrange-spread-track' : '.deck-fan')
+      .first()
+    await expect(track.locator('.card-slot')).toHaveCount(52)
+    const geometry = await track.evaluate((element) => {
+      const slots = element.querySelectorAll<HTMLElement>('.card-slot')
+      const first = slots[0]!,
+        second = slots[1]!,
+        last = slots[51]!
+      const bounds = element.getBoundingClientRect()
+      return {
+        left: bounds.left,
+        right: bounds.right,
+        width: bounds.width,
+        cardWidth: first.offsetWidth,
+        firstRight: first.getBoundingClientRect().right,
+        lastLeft: last.getBoundingClientRect().left,
+        secondLeft: second.getBoundingClientRect().left,
+        firstStack: Number(getComputedStyle(first).zIndex),
+        lastStack: Number(getComputedStyle(last).zIndex),
+      }
+    })
+    expect(geometry.firstRight).toBeCloseTo(geometry.right, 0)
+    expect(geometry.lastLeft).toBeCloseTo(geometry.left, 0)
+    expect(geometry.firstStack).toBeGreaterThan(geometry.lastStack)
+    expect(
+      positionFromPointer(
+        geometry.secondLeft,
+        geometry.left,
+        geometry.width,
+        geometry.cardWidth,
+        52,
+      ),
+    ).toBe(1)
+  })
+}
