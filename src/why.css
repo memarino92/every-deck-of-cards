@@ -1,0 +1,18 @@
+.card-spring {
+  margin: 1.5rem 0;
+}
+
+.card-spring img {
+  display: block;
+  max-width: min(100%, 20rem);
+  height: auto;
+  border-radius: 0.5rem;
+  border: 1px solid rgb(196 143 53 / 40%);
+}
+
+.card-spring figcaption {
+  margin-top: 0.6rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-style: italic;
+}

@@ -61,6 +61,7 @@ export function Presentation(props: { readonly slides: readonly Slide[] }) {
       </Show>
       <div class="talk-controls">
         <button
+          class="action-button"
           type="button"
           onClick={() => advance(-1)}
           disabled={current() === 0}
@@ -68,6 +69,7 @@ export function Presentation(props: { readonly slides: readonly Slide[] }) {
           ← Prev
         </button>
         <button
+          class="action-button"
           type="button"
           onClick={() => advance(1)}
           disabled={current() === props.slides.length - 1}

@@ -1,0 +1,101 @@
+.hero {
+  display: grid;
+  align-content: center;
+  width: min(100%, 90rem);
+  margin: 0 auto;
+  padding: clamp(4rem, 10vh, 8rem) 0;
+}
+
+.hero h1 {
+  max-width: 10ch;
+  margin: 0;
+  font-size: clamp(4.2rem, 13vw, 12rem);
+  font-weight: 400;
+  letter-spacing: -0.075em;
+  line-height: 0.76;
+}
+
+.hero h1 span {
+  display: block;
+  margin-left: clamp(0rem, 8vw, 8rem);
+  color: var(--accent);
+  font-style: italic;
+}
+
+.count {
+  max-width: 100%;
+  margin: clamp(2.5rem, 7vh, 6rem) 0 0;
+  overflow-wrap: anywhere;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: clamp(0.65rem, 1.15vw, 1rem);
+  letter-spacing: 0.08em;
+  line-height: 1.7;
+}
+
+.home-page {
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+}
+
+.home-hero {
+  width: min(calc(100% - var(--page-gutter) - var(--page-gutter)), 90rem);
+  min-height: 0;
+  align-content: end;
+  padding: 1.5rem 0 0;
+}
+
+.home-hero h1 {
+  font-size: clamp(3.8rem, 8vw, 6rem);
+}
+
+.home-hero > p:not(.eyebrow, .count) {
+  max-width: 42rem;
+  margin: clamp(2rem, 5vh, 3.5rem) 0 0 auto;
+  color: #a8b9ae;
+  font-size: clamp(1rem, 1.5vw, 1.3rem);
+  line-height: 1.5;
+}
+
+@media (width > 760px) {
+  .home-hero {
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+    column-gap: 2rem;
+  }
+
+  .home-hero > .eyebrow,
+  .home-hero > .count {
+    grid-column: 1 / -1;
+  }
+
+  .home-hero > p:not(.eyebrow, .count) {
+    align-self: center;
+    margin: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .hero h1 {
+    line-height: 0.83;
+  }
+
+  .hero h1 span {
+    margin-left: 0;
+  }
+}
+
+@media (max-width: 760px) {
+  .home-hero {
+    min-height: 0;
+    padding-block: 1.5rem 0;
+  }
+
+  .home-hero > p:not(.eyebrow, .count) {
+    margin-top: 1.5rem;
+  }
+
+  .home-hero .count {
+    margin-top: 1.5rem;
+  }
+}

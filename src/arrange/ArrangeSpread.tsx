@@ -18,7 +18,11 @@ export function ArrangeSpread(props: {
       onPointerDown={() => props.gestures.cancelMomentum()}
       onWheel={() => props.gestures.cancelMomentum()}
     >
-      <div class="arrange-spread-track" ref={props.geometry.assignTrack}>
+      <div
+        class="arrange-spread-track"
+        ref={props.geometry.assignTrack}
+        style={{ '--card-count': props.editor.ordering().length }}
+      >
         <For each={props.editor.ordering()}>
           {(id, position) => (
             <ArrangeCard

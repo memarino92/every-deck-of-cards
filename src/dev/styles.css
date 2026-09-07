@@ -1,0 +1,66 @@
+.card-grid-page {
+  display: grid;
+  gap: clamp(1.5rem, 3vh, 2.5rem);
+  width: min(100%, 110rem);
+  margin: 0 auto;
+  padding: clamp(1.5rem, 4vh, 3rem) 0;
+}
+
+.card-grid-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem 2rem;
+}
+
+.card-grid-bar h1 {
+  font-weight: 400;
+  max-width: none;
+  margin: 0;
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.card-grid-bar .eyebrow {
+  margin-bottom: 0.75rem;
+}
+
+.card-grid-control {
+  display: grid;
+  gap: 0.4rem;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+}
+
+.card-grid-control input[type='range'] {
+  width: 16rem;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(
+    auto-fill,
+    minmax(calc(var(--card-width) + 1.25rem), 1fr)
+  );
+  gap: calc(var(--card-width) * 0.22);
+  justify-items: center;
+}
+
+.card-cell {
+  display: grid;
+  gap: 0.6rem;
+  justify-items: center;
+  margin: 0;
+}
+
+.card-cell figcaption {
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  text-align: center;
+}

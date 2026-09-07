@@ -1,0 +1,48 @@
+:root {
+  --text: #f4ead2;
+  --felt: #0d3326;
+  --muted: #91ad9d;
+  --accent: #d6aa5d;
+  --gold: #c49745;
+  --font-mono: ui-monospace, 'Cascadia Code', monospace;
+  --font-serif: Georgia, 'Times New Roman', serif;
+
+  color: var(--text);
+  background: var(--felt);
+  font-family: var(--font-serif);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-width: 320px;
+  background:
+    radial-gradient(
+      circle at 80% 20%,
+      rgb(196 143 53 / 10%),
+      transparent 32rem
+    ),
+    var(--felt);
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+}
+
+a {
+  color: inherit;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+  }
+}

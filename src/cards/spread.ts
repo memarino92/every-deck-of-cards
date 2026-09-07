@@ -1,3 +1,13 @@
+/** CSS slot contract shared by passive and interactive spreads. */
+export function spreadSlotStyle(position: number, count: number) {
+  return {
+    '--position': position,
+    '--card-count': count,
+    'z-index': count - position,
+  }
+}
+
+/** Inverse of cards/styles.css placement: slot zero is rightmost. */
 export function positionFromPointer(
   pointerX: number,
   trackLeft: number,

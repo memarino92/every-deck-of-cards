@@ -27,7 +27,7 @@ export function ExplorerFeed(props: {
       {props.failed && (
         <div class="explorer-error" role="alert">
           <p>These decks could not be loaded.</p>
-          <button type="button" onClick={props.onRetry}>
+          <button class="action-button" type="button" onClick={props.onRetry}>
             Try again
           </button>
         </div>

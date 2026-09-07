@@ -7,13 +7,21 @@ Address and render any of the `52!` orderings of a standard deck without enumera
 ## Boundaries
 
 - `domain`: pure TypeScript for cards, factorials, permutation ranking, injected-entropy random selection, and magnitude calculations
-- `platform`: narrow browser adapters, currently Web Crypto entropy for random-index selection
+- `platform`: narrow browser adapters for Web Crypto entropy, reduced motion, and keyboard ownership
 - `worker`: typed messages, stale-response suppression, batching, and transferable card buffers
 - `virtualization`: holds the explorer's scroll position as a `bigint` virtual position and maps it to a bounded rendered strip
-- `ui`: Solid components, navigation, controls, documentation, and talk mode
+- `navigation`: deck query normalization and history synchronization; features choose commit timing
+- `motion`: scalar momentum integration with feature-provided movement and bounds
+- `explorer`: exact-position controller, browser input/measurement, worker-backed row resource, and focused controls/feed/rail rendering
+- `arrange`: deck transactions, explicit spread geometry, pointer sessions, shuffle animation, and focused controls/card rendering
+- `examples` and `presentation`: shared walkthrough state and widgets, composed into article sections or slides with scoped navigation
+- `cards` and `ui`: shared spread placement, card-face styling, design tokens, native action styles, and neutral article layout
+- route components and `Layout`: feature coordination, content composition, navigation, and explicit viewport ownership
 - `deployment`: immutable static assets served by Cloudflare without an application Worker
 
 The domain cannot depend on the other layers. Rendering receives compact card IDs and does not implement permutation mathematics.
+
+Decision [0014](decisions/0014-ui-feature-ownership.md) documents the UI contracts and their lifetimes. Styles are colocated with their feature or shared owner; the root stylesheet only orders imports. Rendering components receive semantic values/actions or explicit element-registration callbacks, rather than discovering another component's DOM structure.
 
 ## Indexing
 
@@ -28,6 +36,8 @@ The browser cannot create a scroll area with `52!` rows. The home page is one vi
 ## Computation
 
 Pure ranking and unranking functions and the injected-entropy random-index algorithm are directly testable. The explorer requests contiguous batches from a Web Worker. Results use flat typed arrays and transferable buffers to avoid cloning card objects.
+
+The row resource validates and decodes that transport into card-ID rows, evicts rows outside the bounded strip, and ignores superseded responses. Cancellation is distinct from failure. A worker failure exposes a retry action that creates a fresh source while deck labels remain synchronous.
 
 Because the explorer walks adjacent indices, batch production unranked the first deck fully and then steps deck-to-deck with the domain's in-place `nextPermutation` (index `i` → `i + 1`) rather than re-running the factoradic unrank per deck. Random access by deck number still unranked directly, so the rank/unrank bijection remains the authority.
 

@@ -27,6 +27,7 @@ export function UnrankStepper(props: { readonly model: Walkthrough }) {
           of {props.model.count.toLocaleString('en-US')}
         </label>
         <button
+          class="action-button"
           type="button"
           disabled={props.model.position() === 0}
           onClick={() => props.model.advance(-1)}
@@ -38,6 +39,7 @@ export function UnrankStepper(props: { readonly model: Walkthrough }) {
           {props.model.trace().steps.length}
         </span>
         <button
+          class="action-button"
           type="button"
           disabled={
             props.model.position() === props.model.trace().steps.length - 1
