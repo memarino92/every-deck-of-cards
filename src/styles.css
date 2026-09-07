@@ -469,7 +469,27 @@ h1 span {
 }
 
 .permutation-table tr.selectable {
+  position: relative;
+}
+
+.permutation-select {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
   cursor: pointer;
+}
+
+.permutation-select::after {
+  position: absolute;
+  inset: 0;
+  content: '';
+}
+
+.permutation-select:focus-visible::after {
+  outline: 2px solid #d6aa5d;
+  outline-offset: -2px;
 }
 
 .permutation-table tr.selectable:hover td {

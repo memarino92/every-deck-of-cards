@@ -1,16 +1,20 @@
-import { createSignal } from 'solid-js'
-
 import { DECK_COUNT } from './domain/deck-number.ts'
 import { factorial } from './domain/factorial.ts'
 import { compareDeckCountToAtomsOnEarth } from './domain/magnitude.ts'
-import { PermutationTable } from './PermutationTable.tsx'
-import { UnrankStepper } from './UnrankStepper.tsx'
+import { PermutationTable } from './examples/PermutationTable.tsx'
+import { FourCardWalkthrough, UnrankExample } from './examples/CardExamples.tsx'
+import {
+  createWalkthrough,
+  exampleTitle,
+  THREE_CARD_EXAMPLE,
+  FIVE_CARD_EXAMPLE,
+} from './examples/walkthrough.ts'
 
 const atomsComparison = compareDeckCountToAtomsOnEarth()
 const deckCountText = DECK_COUNT.toLocaleString('en-US')
 
 export function HowPage() {
-  const [fourCardIndex, setFourCardIndex] = createSignal(0n)
+  const fourCards = createWalkthrough({ size: 4, initialIndex: 0n })
 
   return (
     <article class="why how" aria-labelledby="how-title">
@@ -32,7 +36,7 @@ export function HowPage() {
       </section>
 
       <section aria-labelledby="how-two">
-        <h2 id="how-two">2 cards, {factorial(2).toString()} orderings</h2>
+        <h2 id="how-two">{exampleTitle(2)}</h2>
         <p>
           With two cards there are only two orders. Index 0 is the deck as
           dealt; index 1 swaps them. Every possible shuffle of this tiny deck
@@ -43,7 +47,7 @@ export function HowPage() {
       </section>
 
       <section aria-labelledby="how-three">
-        <h2 id="how-three">3 cards, {factorial(3).toString()} orderings</h2>
+        <h2 id="how-three">{exampleTitle(3)}</h2>
         <p>
           Now the interesting part. The first pick splits the{' '}
           {factorial(3).toString()} orderings into 3 blocks of{' '}
@@ -52,31 +56,27 @@ export function HowPage() {
           one at pool position 2: card 2. Two steps later the deck is 2 0 1.
           Watch it happen:
         </p>
-        <UnrankStepper size={3} initialIndex={4n} />
+        <UnrankExample {...THREE_CARD_EXAMPLE} />
       </section>
 
       <section aria-labelledby="how-four">
-        <h2 id="how-four">4 cards, {factorial(4).toString()} orderings</h2>
+        <h2 id="how-four">{exampleTitle(4)}</h2>
         <p>
-          Twenty-four orderings still fit on one screen. Click any row to replay
-          exactly how its index dealt the cards.
+          Twenty-four orderings still fit on one screen. Select any index to
+          replay exactly how its index dealt the cards.
         </p>
-        <PermutationTable
-          size={4}
-          onSelect={(index) => setFourCardIndex(index)}
-        />
-        <UnrankStepper size={4} index={fourCardIndex()} />
+        <FourCardWalkthrough model={fourCards} />
       </section>
 
       <section aria-labelledby="how-five">
-        <h2 id="how-five">5 cards, {factorial(5).toString()} orderings</h2>
+        <h2 id="how-five">{exampleTitle(5)}</h2>
         <p>
           A hundred and twenty rows is where printing the table stops being
           useful — and that's the point. You never need the table. Try index 73:
           the first digit is 73 ÷ 24 = 3 with remainder 1, and the recipe keeps
           going from there.
         </p>
-        <UnrankStepper size={5} initialIndex={73n} />
+        <UnrankExample {...FIVE_CARD_EXAMPLE} />
       </section>
 
       <section aria-labelledby="how-fiftytwo">
