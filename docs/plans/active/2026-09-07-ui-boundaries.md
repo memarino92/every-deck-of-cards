@@ -24,7 +24,7 @@ Implement the UI audit findings on `codex/ui-boundaries`, preserve the exact dec
 - [x] Inspect the clean application baseline and preserve the prior audit documents.
 - [x] Create `codex/ui-boundaries` from main at `58ae999`.
 - [x] Complete and verify the walkthrough changes.
-- [ ] Complete and verify Explorer/data/shared adapter changes.
+- [x] Complete and verify Explorer/data/shared adapter changes.
 - [ ] Complete and verify Arrange changes.
 - [ ] Complete shared CSS/geometry and architectural documentation.
 - [ ] Run all quality gates and the full Playwright suite before commits.
@@ -53,6 +53,8 @@ Add focused behavior tests for walkthrough ownership/replay, keyboard controls, 
 
 Walkthrough commit: Vite+ check passed, TypeScript passed, all 159 unit tests passed, production build passed, and all 54 Chromium browser tests passed (including two new walkthrough regressions). Query/table selection now shares one model, same-index replay resets progress, Talk retains embedded control keys and selection across navigation, and factorial notation is corrected.
 
+Explorer commit: Vite+ check, TypeScript, production build, all 164 unit tests, and all 56 Chromium tests passed. The row resource covers failure/retry, source recreation, late responses, eviction, and cleanup; pure tests cover the intro/feed seam and deep-space indices. New browser regressions cover worker retry and Back to an absent deck query. The latter fixes an existing echo-guard bug where undefined was treated as a self-authored query value. The shared query adapter now guards only actual authored values. The source error contract distinguishes cancellation from failure, and retries create a fresh worker.
+
 # Related commits
 
-Pending.
+- `5012408` — shared walkthrough state and keyboard ownership.

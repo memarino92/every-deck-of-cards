@@ -1,3 +1,4 @@
+import type { BatchRequest, BatchResponse } from './protocol.ts'
 import { unrankBatchIncremental } from './batch.ts'
 
 /**
@@ -10,19 +11,6 @@ import { unrankBatchIncremental } from './batch.ts'
  * latest pending request, and the producer yields to the worker task queue
  * between chunks so newer messages can cancel stale work before it completes.
  */
-
-export interface BatchRequest {
-  readonly seq: number
-  readonly startIndex: bigint
-  readonly count: number
-}
-
-export interface BatchResponse {
-  readonly seq: number
-  readonly startIndex: bigint
-  readonly count: number
-  readonly cards: Uint8Array
-}
 
 function isBatchRequest(value: unknown): value is BatchRequest {
   if (typeof value !== 'object' || value === null) {

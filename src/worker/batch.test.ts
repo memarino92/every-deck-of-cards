@@ -9,7 +9,7 @@ import {
   unrankBatchIncremental,
 } from './batch.ts'
 import { DeckBatchSource, type WorkerLike } from './DeckBatchSource.ts'
-import type { BatchRequest, BatchResponse } from './explorer.worker.ts'
+import type { BatchRequest, BatchResponse } from './protocol.ts'
 
 describe('clampBatchCount', () => {
   it('returns the requested count when enough decks remain', () => {

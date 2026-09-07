@@ -804,12 +804,12 @@ h1 span {
   letter-spacing: 0.05em;
 }
 
-body.explorer-active {
+body.viewport-layout {
   height: 100dvh;
   overflow: hidden;
 }
 
-body.explorer-active main {
+main.viewport-main {
   height: 100dvh;
   min-height: 0;
   padding-bottom: 0;
@@ -823,6 +823,14 @@ body.explorer-active main {
   left: 0;
   overflow: hidden;
   background: linear-gradient(rgb(0 0 0 / 18%), rgb(0 0 0 / 18%)), #0b0e0c;
+}
+
+.explorer-error {
+  position: absolute;
+  z-index: 100;
+  inset: 0 0 auto;
+  padding: 1rem;
+  background: #0d3326;
 }
 
 @media (max-width: 760px) {

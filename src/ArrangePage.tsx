@@ -14,7 +14,7 @@ import { rankPermutation, unrankPermutation } from './domain/permutation.ts'
 import { randomPermutationIndex } from './domain/random.ts'
 import { cryptoEntropy } from './platform/crypto-entropy.ts'
 import { PlayingCard } from './PlayingCard.tsx'
-import { parseDeckNumberParam } from './virtualization/deck-param.ts'
+import { parseDeckNumberParam } from './navigation/deck-param.ts'
 
 const SHUFFLE_DURATION_MS = 760
 const TOUCH_LONG_PRESS_MS = 420

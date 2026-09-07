@@ -4,7 +4,7 @@ import { DECK_COUNT } from '../domain/deck-number.ts'
 import { parseDeckNumberParam } from './deck-param.ts'
 
 describe('parseDeckNumberParam', () => {
-  it('anchors to the first deck when the parameter is absent', () => {
+  it('opens the first deck when the parameter is absent', () => {
     expect(parseDeckNumberParam(undefined)).toBe(0n)
   })
 
