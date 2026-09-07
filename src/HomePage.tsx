@@ -7,6 +7,7 @@ export function HomePage() {
   return (
     <div class="home-page">
       <ExplorerPage
+        labelledBy="hero-title"
         intro={
           <section class="hero home-hero" aria-labelledby="hero-title">
             <p class="eyebrow">52 cards. 80 unvigintillion possibilities.</p>

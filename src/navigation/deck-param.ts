@@ -18,7 +18,7 @@ const GROUPING_SEPARATORS = /[,\s_'’  ]/g
  * Parse an untrusted deck-number URL parameter into a zero-based permutation
  * index. Grouping separators are stripped first. Absent, malformed,
  * non-numeric, or out-of-range input falls back to the first deck rather
- * than throwing, so a bad link still opens the explorer.
+ * than throwing, so a bad link still opens a valid deck.
  */
 export function parseDeckNumberParam(raw: string | undefined): bigint {
   const digits = raw?.replaceAll(GROUPING_SEPARATORS, '')

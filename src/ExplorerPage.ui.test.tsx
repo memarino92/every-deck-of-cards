@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 import { CARD_COUNT } from '@/domain/cards.ts'
 import { stripRange, createPosition } from '@/virtualization/position.ts'
 import { unrankBatch } from '@/worker/batch.ts'
-import type { BatchRequest, BatchResponse } from '@/worker/explorer.worker.ts'
+import type { BatchRequest, BatchResponse } from '@/worker/protocol.ts'
 
 // The router provides useSearchParams; render the page inside a memory-history
 // router primed to / so the explorer mounts the way it does in production.

@@ -1,4 +1,5 @@
-import type { BatchRequest, BatchResponse } from './explorer.worker.ts'
+import type { BatchRequest, BatchResponse } from './protocol.ts'
+import { BatchCancelledError } from './protocol.ts'
 
 /**
  * Client-side owner of the explorer worker.
@@ -30,6 +31,8 @@ export class DeckBatchSource {
   readonly #worker: WorkerLike
   #seq = 0
   #pending: PendingRequest | undefined
+  #failure: Error | undefined
+  #terminated = false
 
   public constructor(createWorker: WorkerFactory) {
     this.#worker = createWorker()
@@ -40,9 +43,8 @@ export class DeckBatchSource {
       },
     )
     this.#worker.addEventListener('error', (event: ErrorEvent) => {
-      this.#pending?.reject(
-        new Error(event.message || 'Explorer worker failed'),
-      )
+      this.#failure = new Error(event.message || 'Explorer worker failed')
+      this.#pending?.reject(this.#failure)
       this.#pending = undefined
     })
   }
@@ -53,7 +55,14 @@ export class DeckBatchSource {
    * its eventual response is dropped.
    */
   public request(startIndex: bigint, count: number): Promise<BatchResponse> {
-    this.#pending?.reject(new Error('Superseded by a newer batch request'))
+    if (this.#terminated)
+      return Promise.reject(
+        new BatchCancelledError('Explorer worker terminated'),
+      )
+    if (this.#failure !== undefined) return Promise.reject(this.#failure)
+    this.#pending?.reject(
+      new BatchCancelledError('Superseded by a newer batch request'),
+    )
 
     this.#seq += 1
     const seq = this.#seq
@@ -63,7 +72,14 @@ export class DeckBatchSource {
     })
 
     const message: BatchRequest = { seq, startIndex, count }
-    this.#worker.postMessage(message, [])
+    try {
+      this.#worker.postMessage(message, [])
+    } catch (error) {
+      this.#failure =
+        error instanceof Error ? error : new Error('Explorer worker failed')
+      this.#pending?.reject(this.#failure)
+      this.#pending = undefined
+    }
 
     return promise
   }
@@ -79,7 +95,8 @@ export class DeckBatchSource {
   }
 
   public terminate(): void {
-    this.#pending?.reject(new Error('Explorer worker terminated'))
+    this.#terminated = true
+    this.#pending?.reject(new BatchCancelledError('Explorer worker terminated'))
     this.#pending = undefined
     this.#worker.terminate()
   }

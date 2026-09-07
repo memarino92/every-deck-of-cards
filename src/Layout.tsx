@@ -1,10 +1,17 @@
-import type { ParentProps } from 'solid-js'
+import { createEffect, onCleanup, type ParentProps } from 'solid-js'
+import { useLocation } from '@solidjs/router'
 
 import { SiteNav } from './SiteNav.tsx'
 
 export function Layout(props: ParentProps) {
+  const location = useLocation()
+  const viewport = () => location.pathname === '/'
+  createEffect(viewport, (enabled) => {
+    document.body.classList.toggle('viewport-layout', enabled)
+  })
+  onCleanup(() => document.body.classList.remove('viewport-layout'))
   return (
-    <main>
+    <main class={{ 'viewport-main': viewport() }}>
       <header class="masthead">
         <a class="wordmark" href="/" aria-label="Every Deck of Cards home">
           everydeckof.cards
