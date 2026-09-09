@@ -1,0 +1,43 @@
+.article-layout {
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr);
+  overflow-wrap: anywhere;
+  display: grid;
+  align-content: start;
+  width: min(100%, 44rem);
+  margin: 0 auto;
+  padding: 1.5rem 0;
+  gap: 1.5rem;
+}
+
+.article-title {
+  max-width: 12ch;
+  margin: 0;
+  font-size: clamp(2.8rem, 8vw, 5.5rem);
+  font-weight: 400;
+  letter-spacing: -0.04em;
+  line-height: 0.9;
+}
+
+.article-layout > section > h2 {
+  margin: 0 0 0.9rem;
+  color: var(--accent);
+  font-size: clamp(1.2rem, 2.2vw, 1.6rem);
+  font-weight: 400;
+  font-style: italic;
+  letter-spacing: 0;
+}
+
+.article-layout > section > p {
+  margin: 0 0 1rem;
+  font-size: clamp(1rem, 1.4vw, 1.2rem);
+  line-height: 1.65;
+}
+
+.article-layout > .eyebrow {
+  margin: 0;
+}
+
+.article-layout > section > p:last-child {
+  margin-bottom: 0;
+}

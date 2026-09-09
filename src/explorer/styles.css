@@ -1,0 +1,258 @@
+.explorer {
+  position: relative;
+  width: calc(100% + var(--page-gutter) + var(--page-gutter));
+  height: 100%;
+  margin-left: calc(-1 * var(--page-gutter));
+  overflow: hidden;
+  touch-action: pinch-zoom;
+}
+
+.explorer:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.explorer-intro {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  will-change: transform;
+}
+
+.explorer-bar {
+  position: absolute;
+  right: 0;
+  left: 0;
+  z-index: 100;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1.25rem 2rem;
+  padding: 1rem var(--page-gutter);
+  border-bottom: 1px solid rgb(244 234 210 / 12%);
+  background: rgb(13 51 38 / 96%);
+  backdrop-filter: blur(10px);
+  will-change: transform;
+}
+
+.explorer-heading h2 {
+  max-width: none;
+  margin: 0;
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.explorer-heading .eyebrow {
+  margin-bottom: 0.75rem;
+}
+
+.jump {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+}
+
+.jump-actions {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.6rem;
+}
+
+.jump label {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.jump label span {
+  color: var(--muted);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-size: 0.7rem;
+}
+
+.jump input {
+  width: 22rem;
+  max-width: 40vw;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid rgb(244 234 210 / 25%);
+  border-radius: 0.3rem;
+  background: rgb(0 0 0 / 25%);
+  color: var(--text);
+  font: inherit;
+}
+
+.jump input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.jump .action-button {
+  --action-padding: 0.4rem 1.1rem;
+  --action-radius: 0.3rem;
+}
+
+.jump .random-button {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.jump .random-button:hover {
+  background: rgb(214 170 93 / 18%);
+  color: var(--text);
+}
+
+.explorer-meta {
+  margin: 0;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
+}
+
+.explorer-feed {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  overflow: hidden;
+  background: linear-gradient(rgb(0 0 0 / 18%), rgb(0 0 0 / 18%)), #0b0e0c;
+}
+
+.explorer-error {
+  position: absolute;
+  z-index: 100;
+  inset: 0 0 auto;
+  padding: 1rem;
+  background: var(--felt);
+}
+
+@media (max-width: 760px) {
+  .jump-actions {
+    width: 100%;
+  }
+
+  .explorer-bar {
+    padding-top: 1rem;
+    align-items: start;
+    gap: 0.75rem;
+  }
+
+  .explorer-heading h2 {
+    font-size: 1.6rem;
+  }
+
+  .explorer-heading .eyebrow,
+  .explorer-meta {
+    display: none;
+  }
+
+  .jump {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .jump label {
+    width: 100%;
+  }
+
+  .jump input {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.explorer-strip {
+  position: relative;
+  will-change: transform;
+}
+
+.explorer-rail {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 110;
+  width: 1.1rem;
+  cursor: grab;
+}
+
+.explorer-rail:active {
+  cursor: grabbing;
+}
+
+.explorer-rail-thumb {
+  position: absolute;
+  left: 0.25rem;
+  right: 0.25rem;
+  height: 3rem;
+  border-radius: 0.3rem;
+  background: var(--gold);
+}
+
+.explorer-rail:hover .explorer-rail-thumb,
+.explorer-rail:active .explorer-rail-thumb {
+  background: var(--accent);
+}
+
+.deck-row {
+  position: relative;
+  display: block;
+  padding: 0 clamp(0.75rem, 2vw, 1.5rem);
+  border-bottom: 1px solid rgb(244 234 210 / 7%);
+}
+
+.deck-number {
+  position: absolute;
+  top: clamp(0.4rem, 1.2vh, 0.8rem);
+  left: clamp(0.75rem, 2vw, 1.5rem);
+  z-index: 70;
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  overflow-wrap: anywhere;
+
+  text-shadow: 0 1px 3px rgb(0 0 0 / 70%);
+}
+
+.deck-fan {
+  position: relative;
+  height: 100%;
+  width: 100%;
+
+  padding-top: clamp(1.1rem, 2.6vh, 1.7rem);
+}
+
+.deck-loading {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #5d6f63;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.deck-card {
+  top: 50%;
+  transform: translateY(-50%);
+  transition:
+    transform 140ms ease,
+    box-shadow 140ms ease;
+}
+
+.deck-card:hover {
+  transform: translateY(-58%);
+  box-shadow: 0 6px 18px rgb(0 0 0 / 55%);
+}
+
+.deck-fan {
+  --card-width: clamp(2.4rem, 4.4vw, 3.9rem);
+}
