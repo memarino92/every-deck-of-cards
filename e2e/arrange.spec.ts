@@ -106,6 +106,7 @@ test.describe('Arrange prototype', () => {
   }) => {
     await page.setViewportSize({ width: 390, height: 844 })
     await page.goto('/arrange')
+    await expect(page.locator('.playing-card').first()).toBeVisible()
 
     const geometry = await page.evaluate(() => {
       const spread = document.querySelector<HTMLElement>('.arrange-spread')
