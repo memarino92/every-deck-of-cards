@@ -1,15 +1,20 @@
 import { createRouter, useLocation, useNavigate } from '@solidjs/router'
 import { render } from '@solidjs/web'
-import { onSettled } from 'solid-js'
+import { lazy, Loading, onSettled } from 'solid-js'
 
-import { ArrangePage } from './ArrangePage.tsx'
-import { CardGridPage } from './dev/CardGridPage.tsx'
 import { HomePage } from './HomePage.tsx'
-import { HowPage } from './HowPage.tsx'
 import { Layout } from './Layout.tsx'
-import { TalkPage } from './TalkPage.tsx'
-import { WhyPage } from './WhyPage.tsx'
 import './styles.css'
+
+const ArrangePage = lazy(() => import('./ArrangePage.tsx'), {
+  export: 'ArrangePage',
+})
+const CardGridPage = lazy(() => import('./dev/CardGridPage.tsx'), {
+  export: 'CardGridPage',
+})
+const HowPage = lazy(() => import('./HowPage.tsx'), { export: 'HowPage' })
+const TalkPage = lazy(() => import('./TalkPage.tsx'), { export: 'TalkPage' })
+const WhyPage = lazy(() => import('./WhyPage.tsx'), { export: 'WhyPage' })
 
 function ExploreRedirect() {
   const location = useLocation()
@@ -44,4 +49,15 @@ const Router = createRouter({
 
 // Start mode's document shell renders an empty <body> in client posture; the
 // authored entry owns the mount, rendering straight into document.body.
-render(() => <Router>{(props) => props.children}</Router>, document.body)
+render(
+  () => (
+    <Router>
+      {(props) => (
+        <Loading fallback={<output>Loading page…</output>}>
+          {props.children}
+        </Loading>
+      )}
+    </Router>
+  ),
+  document.body,
+)

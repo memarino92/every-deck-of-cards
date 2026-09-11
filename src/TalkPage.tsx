@@ -1,4 +1,5 @@
 import { Presentation, type Slide } from './presentation/Presentation.tsx'
+import './presentation/styles.css'
 
 import { DECK_COUNT } from './domain/deck-number.ts'
 import { factorial } from './domain/factorial.ts'

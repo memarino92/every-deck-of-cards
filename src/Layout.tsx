@@ -1,4 +1,4 @@
-import { createEffect, onCleanup, type ParentProps } from 'solid-js'
+import { createEffect, Loading, onCleanup, type ParentProps } from 'solid-js'
 import { useLocation } from '@solidjs/router'
 
 import { SiteNav } from './SiteNav.tsx'
@@ -32,7 +32,9 @@ export function Layout(props: ParentProps) {
         </a>
       </header>
 
-      {props.children}
+      <Loading fallback={<output>Loading page…</output>}>
+        {props.children}
+      </Loading>
     </main>
   )
 }

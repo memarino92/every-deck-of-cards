@@ -37,6 +37,7 @@ test('Talk retains embedded controls and selection across slide navigation', asy
     name: 'Presentation',
     exact: true,
   })
+  await expect(surface).toBeFocused()
   await page.keyboard.press('ArrowRight')
   await page.keyboard.press('ArrowRight')
   await expect(page.locator('h1')).toHaveText('3 cards, 6 orderings')
