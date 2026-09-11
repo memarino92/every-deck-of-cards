@@ -31,7 +31,7 @@ jobs:
           node-version: 24
 
       - name: Set up Vite+
-        uses: voidzero-dev/setup-vp@5af416ede120848958d85c9720e61b921ac7bca6 # v1 (vite-plus 0.3.0)
+        uses: voidzero-dev/setup-vp@7ca28af3bdfee81cbd61290147ff4f1cc384256e # v1 (vite-plus 0.3.0)
         with:
           # Version auto-detects from the pnpm catalog pin (0.3.0). Keep the
           # runner's Node 24 rather than adopting vp env management.
