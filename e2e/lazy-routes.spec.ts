@@ -24,7 +24,7 @@ test('exploring and reading How do not fetch the talk until requested', async ({
   await expect(page.locator('.talk-slide')).toHaveCount(1)
   await expect(page.locator('.permutation-table, .stepper')).toHaveCount(0)
   await page.getByRole('button', { name: 'Next →', exact: true }).click()
-  await expect(page.locator('h1')).toHaveText('2 cards, 2 orderings')
+  await expect(page.locator('h1')).toHaveText('Derrick H. Lehmer')
   await expect(page.locator('.talk-slide')).toHaveCount(1)
   await page.getByRole('button', { name: '← Prev', exact: true }).click()
   await expect(page.locator('.permutation-table, .stepper')).toHaveCount(0)

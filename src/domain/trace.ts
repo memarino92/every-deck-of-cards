@@ -1,4 +1,47 @@
 import { factorial } from './factorial.ts'
+import { rankPermutation } from './permutation.ts'
+
+export interface RankStep<T> {
+  readonly position: number
+  readonly selected: T
+  readonly poolBefore: readonly T[]
+  readonly digit: number
+  readonly blockSize: bigint
+  readonly indexSoFar: bigint
+}
+
+/** Trace the production ranking algorithm, including its input validation. */
+export function traceRank<T>(
+  canonical: readonly T[],
+  permutation: readonly T[],
+) {
+  const index = rankPermutation(canonical, permutation)
+  const remaining = [...canonical]
+  let indexSoFar = 0n
+  const steps: RankStep<T>[] = permutation.map((selected, position) => {
+    const poolBefore = Object.freeze([...remaining])
+    const digit = remaining.findIndex(
+      (value) => value === selected || Object.is(value, selected),
+    )
+    const blockSize = factorial(remaining.length - 1)
+    indexSoFar += BigInt(digit) * blockSize
+    remaining.splice(digit, 1)
+    return Object.freeze({
+      position,
+      selected,
+      poolBefore,
+      digit,
+      blockSize,
+      indexSoFar,
+    })
+  })
+  return Object.freeze({
+    canonical: Object.freeze([...canonical]),
+    permutation: Object.freeze([...permutation]),
+    index,
+    steps: Object.freeze(steps),
+  })
+}
 
 export interface UnrankStep<T> {
   /** Zero-based position in the output permutation. */

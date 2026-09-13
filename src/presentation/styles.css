@@ -2,13 +2,15 @@
   display: grid;
   min-height: 100vh;
   grid-template-rows: 1fr auto;
-  padding: clamp(1.5rem, 4vw, 4rem);
+  padding: clamp(1rem, 3vw, 3rem);
+  gap: 1.5rem;
 }
 
 .talk-slide {
   display: grid;
   align-content: center;
-  width: min(100%, 70rem);
+  width: min(100%, 88rem);
+  min-width: 0;
   margin: 0 auto;
 }
 
@@ -23,25 +25,127 @@
 .talk-slide h1 {
   max-width: none;
   margin: 0 0 2rem;
-  font-size: clamp(2.6rem, 7vw, 6rem);
+  font-size: clamp(2.2rem, 4.5vw, 4.5rem);
   font-weight: 400;
   letter-spacing: -0.05em;
   line-height: 0.95;
 }
 
 .talk-body {
+  min-width: 0;
+  overflow-wrap: anywhere;
   font-size: clamp(1.2rem, 2.4vw, 1.8rem);
   line-height: 1.55;
+}
+
+.talk-history {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+  align-items: center;
+  gap: clamp(1.5rem, 4vw, 4rem);
+}
+.talk-history p {
+  margin: 0 0 1rem;
+}
+.talk-history strong {
+  color: var(--accent);
+  font-weight: 400;
+}
+.talk-history .talk-sources {
+  font: 0.8rem/1.6 var(--font-mono);
+  color: var(--muted);
+}
+
+.talk-portrait {
+  margin: 0;
+  min-width: 0;
+}
+.talk-portrait img {
+  display: block;
+  width: auto;
+  height: min(48vh, 28rem);
+  max-width: 100%;
+  object-fit: contain;
+  border-radius: 0.35rem;
+}
+.talk-portrait figcaption {
+  max-width: 24rem;
+  margin-top: 0.75rem;
+  color: var(--muted);
+  font: 0.7rem/1.5 var(--font-mono);
+}
+@media (max-width: 650px) {
+  .talk-history {
+    grid-template-columns: 1fr;
+  }
+  .talk-portrait img {
+    height: 16rem;
+  }
 }
 
 .talk-body .permutation-table {
   font-size: clamp(0.85rem, 1.6vw, 1.15rem);
 }
 
+.talk-permutations {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: center;
+  gap: clamp(1.5rem, 4vw, 4rem);
+}
+.talk-permutation-cards {
+  --card-width: clamp(2.5rem, 6.5vh, 4rem);
+  display: grid;
+  justify-content: center;
+  gap: 0.5rem;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.talk-permutation-cards.is-two-cards {
+  --card-width: clamp(4rem, 13vh, 8rem);
+  gap: 1.5rem;
+}
+.talk-permutation-cards li {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+.talk-arrangement-index {
+  width: 2ch;
+  margin-right: 0.5rem;
+  color: var(--muted);
+  font: 0.9rem var(--font-mono);
+}
+@media (max-width: 650px) {
+  .talk-permutations {
+    grid-template-columns: 1fr;
+  }
+}
+
 .talk-controls {
   display: flex;
   justify-content: space-between;
   gap: 1rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.talk-jump {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  color: var(--muted);
+  font: 0.8rem var(--font-mono);
+}
+.talk-jump select {
+  max-width: min(22rem, 65vw);
+  padding: 0.5rem;
+  border: 1px solid var(--muted);
+  border-radius: 0.35rem;
+  color: var(--text);
+  background: var(--felt);
+  font: inherit;
 }
 
 .talk-controls .action-button {
