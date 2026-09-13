@@ -1,24 +1,34 @@
-import { Show, createSignal, onSettled } from 'solid-js'
-import type { JSX } from '@solidjs/web'
-
+import { useSearchParams } from '@solidjs/router'
+import { For, Show, createMemo, onSettled } from 'solid-js'
 import { isNavigationKey } from '../platform/keyboard.ts'
-
-export interface Slide {
-  readonly title: string
-  readonly body: () => JSX.Element
-}
+import { advancePosition, type SlidePosition } from './navigation.ts'
+import { parsePresentationQuery } from './query.ts'
+import type { Slide } from './slide.ts'
+export type { Slide } from './slide.ts'
 
 /** Presentation navigation is scoped to this surface, not the browser window. */
 export function Presentation(props: { readonly slides: readonly Slide[] }) {
-  const [current, setCurrent] = createSignal(0)
+  const [params, setParams] = useSearchParams()
+  const position = createMemo(() =>
+    parsePresentationQuery(props.slides, params['slide'], params['step']),
+  )
+  const current = () => position().slide
+  const step = () => position().step
+  const counts = () => props.slides.map((slide) => slide.stepCount ?? 1)
   let surface: HTMLElement | undefined
   const assignSurface = (element: HTMLElement): void => {
     surface = element
   }
 
-  function advance(delta: number): void {
-    setCurrent((value) =>
-      Math.min(props.slides.length - 1, Math.max(0, value + delta)),
+  function advance(delta: -1 | 1): void {
+    setPosition(advancePosition(counts(), position(), delta))
+  }
+
+  function setPosition(next: SlidePosition): void {
+    if (next.slide === current() && next.step === step()) return
+    setParams(
+      { slide: props.slides[next.slide]?.id, step: String(next.step + 1) },
+      { scroll: false },
     )
   }
 
@@ -52,10 +62,11 @@ export function Presentation(props: { readonly slides: readonly Slide[] }) {
         {(slide) => (
           <section class="talk-slide" aria-labelledby="talk-slide-title">
             <p class="talk-progress">
-              {current() + 1} / {props.slides.length}
+              Slide {current() + 1} / {props.slides.length}
+              {' · '}Step {step() + 1} / {counts()[current()]}
             </p>
             <h1 id="talk-slide-title">{slide.title}</h1>
-            <div class="talk-body">{slide.body()}</div>
+            <div class="talk-body">{slide.body(step)}</div>
           </section>
         )}
       </Show>
@@ -64,15 +75,44 @@ export function Presentation(props: { readonly slides: readonly Slide[] }) {
           class="action-button"
           type="button"
           onClick={() => advance(-1)}
-          disabled={current() === 0}
+          disabled={current() === 0 && step() === 0}
         >
           ← Prev
         </button>
         <button
           class="action-button"
           type="button"
+          onClick={() => setPosition({ slide: current(), step: 0 })}
+          disabled={step() === 0}
+        >
+          Restart slide
+        </button>
+        <label class="talk-jump">
+          Slide
+          <select
+            aria-label="Jump to slide"
+            value={current()}
+            onChange={(event) =>
+              setPosition({ slide: Number(event.currentTarget.value), step: 0 })
+            }
+          >
+            <For each={props.slides}>
+              {(slide, index) => (
+                <option value={index()}>
+                  {index() + 1}. {slide.title}
+                </option>
+              )}
+            </For>
+          </select>
+        </label>
+        <button
+          class="action-button"
+          type="button"
           onClick={() => advance(1)}
-          disabled={current() === props.slides.length - 1}
+          disabled={
+            current() === props.slides.length - 1 &&
+            step() === (counts()[current()] ?? 1) - 1
+          }
         >
           Next →
         </button>

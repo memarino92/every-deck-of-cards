@@ -63,6 +63,11 @@ Arrange proved that keyed card motion, cancellation, and reduced motion can be d
 # Decisions Made
 
 - Arrange's motion decision remains complete and does not force the talk's eventual choice.
+- 2026-09-13: The first concrete talk prototype uses typed slide steps and native
+  layout transitions (decision 0017). It walks unrank indices 0/14 and ranks the
+  last four-card permutation to index 23. See the
+  [completed implementation plan](../completed/2026-09-13-talk-step-through.md)
+  for implementation and verification. Full-talk storyboarding remains open.
 
 # Deviations
 

@@ -1,0 +1,237 @@
+.algorithm-walk {
+  --debug-border: rgb(244 234 210 / 15%);
+  font-size: 1rem;
+}
+.debug-kicker {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin: 0 0 1rem;
+  color: var(--accent);
+  font: 0.75rem var(--font-mono);
+  letter-spacing: 0.06em;
+}
+.debug-kicker span {
+  color: var(--muted);
+}
+.debug-columns {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  gap: 2rem;
+  align-items: start;
+}
+.debug-program {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--debug-border);
+  border-radius: 0.75rem;
+  background: rgb(0 0 0 / 18%);
+}
+.debug-panel-heading {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.7rem 1rem;
+  border-bottom: 1px solid var(--debug-border);
+  color: var(--muted);
+  font: 0.7rem var(--font-mono);
+}
+.debug-code {
+  margin: 0;
+  padding: 1rem 0;
+  overflow-x: auto;
+  font: clamp(0.65rem, 1vw, 0.85rem)/1.9 var(--font-mono);
+  tab-size: 2;
+}
+.debug-code code {
+  display: block;
+  min-width: max-content;
+}
+.debug-line {
+  display: block;
+  border-left: 3px solid transparent;
+  padding-right: 1rem;
+}
+.debug-line.is-active {
+  border-left-color: var(--accent);
+  background: rgb(214 170 93 / 16%);
+  color: #ffe0a5;
+}
+.debug-line-number {
+  display: inline-block;
+  width: 2.4rem;
+  padding-right: 0.8rem;
+  text-align: right;
+  color: var(--muted);
+  user-select: none;
+}
+.debug-watches {
+  margin: 0;
+  padding: 0.65rem 1rem;
+  font: 0.85rem/1.65 var(--font-mono);
+}
+.debug-watches > div {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr;
+  gap: 1rem;
+  padding: 0.2rem 0;
+}
+.debug-watches dt {
+  color: var(--muted);
+}
+.debug-watches dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--text);
+}
+.debug-visual {
+  min-width: 0;
+}
+.debug-trays {
+  position: relative;
+  display: grid;
+  gap: 2.25rem;
+}
+.debug-tray {
+  padding: 1rem 1.2rem 0.65rem;
+  border: 1px solid var(--debug-border);
+  border-radius: 0.75rem;
+  background: rgb(0 0 0 / 10%);
+}
+.debug-tray h2 {
+  margin: 0 0 0.85rem;
+  color: var(--muted);
+  font: 0.75rem var(--font-mono);
+  font-weight: 400;
+}
+.debug-slots {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+.debug-slot {
+  aspect-ratio: 5 / 7;
+  border-radius: 0.4rem;
+  background: rgb(0 0 0 / 25%);
+  box-shadow: inset 0 1px 5px rgb(0 0 0 / 20%);
+  border: 1px dashed rgb(145 173 157 / 20%);
+}
+.debug-slot-index {
+  display: block;
+  height: 1.6rem;
+  padding-top: 0.25rem;
+  color: var(--muted);
+  text-align: center;
+  font: 0.75rem/1.35 var(--font-mono);
+}
+.debug-moving-card {
+  --card-width: var(--slot-width);
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  border-radius: 0.45rem;
+}
+.debug-moving-card.is-selected {
+  z-index: 2;
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
+.debug-slot-note {
+  min-height: 2.5rem;
+  color: var(--muted);
+  font: 0.7rem/1.5 var(--font-mono);
+}
+.debug-equation {
+  min-height: 3.5rem;
+  margin: 0.75rem 0 0;
+  color: var(--accent);
+  font: clamp(0.9rem, 1.5vw, 1.3rem)/1.5 var(--font-mono);
+}
+.debug-narration {
+  display: block;
+  min-height: 3.2rem;
+  margin: 1.25rem 0 0;
+  max-width: 65ch;
+  color: var(--text);
+  font-size: 1.1rem;
+  line-height: 1.5;
+}
+@media (min-width: 801px) and (max-height: 850px) {
+  .talk {
+    padding: 1rem 2rem;
+    gap: 1rem;
+  }
+  .talk-slide h1 {
+    margin-bottom: 1rem;
+    font-size: 2.5rem;
+  }
+  .talk-progress {
+    margin-bottom: 0.5rem;
+  }
+  .debug-code {
+    padding: 0.6rem 0;
+    font-size: 0.75rem;
+    line-height: 1.7;
+  }
+  .debug-panel-heading {
+    padding: 0.5rem 1rem;
+  }
+  .debug-watches {
+    padding: 0.5rem 1rem;
+    line-height: 1.5;
+  }
+  .debug-watches > div {
+    padding: 0.1rem 0;
+  }
+  .debug-visual {
+    width: min(100%, 21rem);
+    margin: 0 auto;
+  }
+  .debug-trays {
+    gap: 1.25rem;
+  }
+  .debug-tray {
+    padding: 0.7rem 0.9rem 0.4rem;
+  }
+  .debug-tray h2 {
+    margin-bottom: 0.5rem;
+  }
+  .debug-slot-index {
+    height: 1.2rem;
+    font-size: 0.65rem;
+  }
+  .debug-slot-note {
+    min-height: 0;
+    margin: 0.5rem 0;
+    font-size: 0.65rem;
+  }
+  .debug-equation {
+    min-height: 2rem;
+    margin-top: 0.5rem;
+    font-size: 1rem;
+  }
+  .debug-narration {
+    min-height: 2.8rem;
+    margin-top: 0.75rem;
+    font-size: 1rem;
+  }
+}
+@media (max-width: 800px) {
+  .debug-columns {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  .debug-code {
+    font-size: 0.7rem;
+  }
+  .debug-slots {
+    gap: 0.65rem;
+  }
+  .debug-visual {
+    width: min(100%, 28rem);
+    margin: 0 auto;
+  }
+}

@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test'
 import { positionFromPointer } from '../src/cards/spread.ts'
 
-test('walkthrough typography belongs to the example in both article and Talk', async ({
+test('walkthrough typography belongs to the article example', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1280, height: 900 })
@@ -9,31 +9,7 @@ test('walkthrough typography belongs to the example in both article and Talk', a
   const math = page.locator('.stepper-math').first()
   await expect(math).toHaveCSS('font-size', '14.4px')
   await expect(math).toHaveCSS('margin-bottom', '8px')
-  const articleTypography = await math.evaluate((element) => {
-    const style = getComputedStyle(element)
-    return {
-      font: style.fontSize,
-      line: style.lineHeight,
-      margin: style.marginBottom,
-    }
-  })
   await expect(page.locator('#how-three + p')).toHaveCSS('font-size', '17.92px')
-
-  await page.goto('/talk')
-  await page.getByRole('button', { name: 'Next →' }).click()
-  await page.getByRole('button', { name: 'Next →' }).click()
-  await expect(page.locator('.stepper-math')).toHaveCSS(
-    'font-size',
-    articleTypography.font,
-  )
-  await expect(page.locator('.stepper-math')).toHaveCSS(
-    'line-height',
-    articleTypography.line,
-  )
-  await expect(page.locator('.stepper-math')).toHaveCSS(
-    'margin-bottom',
-    articleTypography.margin,
-  )
 })
 
 for (const route of ['/?deck=1', '/arrange']) {

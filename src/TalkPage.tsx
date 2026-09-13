@@ -1,78 +1,73 @@
 import { Presentation, type Slide } from './presentation/Presentation.tsx'
 import './presentation/styles.css'
+import { stepSlide } from './presentation/slide.ts'
+import { historySlides } from './presentation/HistorySlides.tsx'
+import { PermutationCards } from './presentation/PermutationCards.tsx'
+import { AlgorithmWalkthrough } from './presentation/debugger/AlgorithmWalkthrough.tsx'
+import {
+  FOUR_CARDS,
+  rankWalk,
+  unrankWalk,
+} from './presentation/debugger/frames.ts'
 
 import { DECK_COUNT } from './domain/deck-number.ts'
-import { factorial } from './domain/factorial.ts'
 import { compareDeckCountToAtomsOnEarth } from './domain/magnitude.ts'
 import { PermutationTable } from './examples/PermutationTable.tsx'
-import { FourCardWalkthrough, UnrankExample } from './examples/CardExamples.tsx'
-import {
-  createWalkthrough,
-  exampleTitle,
-  THREE_CARD_EXAMPLE,
-  FIVE_CARD_EXAMPLE,
-} from './examples/walkthrough.ts'
+import { exampleTitle } from './examples/walkthrough.ts'
 
 const atomsComparison = compareDeckCountToAtomsOnEarth()
 
 export function TalkPage() {
-  const fourCards = createWalkthrough({ size: 4, initialIndex: 0n })
+  const debuggerSlides = [
+    unrankWalk(0n),
+    unrankWalk(14n),
+    rankWalk(FOUR_CARDS.toReversed()),
+  ].map((walk) =>
+    stepSlide({
+      id: walk.mode === 'unrank' ? `deal-index-${walk.index}` : 'rank-cards',
+      title:
+        walk.mode === 'unrank'
+          ? `Deal index ${walk.index}`
+          : 'Read the cards. Find the index.',
+      steps: walk.frames,
+      render: (frame) => <AlgorithmWalkthrough walk={walk} frame={frame()} />,
+    }),
+  )
 
   const slides: Slide[] = [
+    ...historySlides,
     {
-      title: '52 cards. 80 unvigintillion possibilities.',
-      body: () => (
-        <p>
-          Every ordering of a 52-card deck has exactly one number. No list, no
-          storage — a reversible recipe. Here's the recipe, built up with decks
-          small enough to see whole.
-        </p>
-      ),
-    },
-    {
+      id: 'two-cards',
       title: exampleTitle(2),
       body: () => (
-        <>
-          <p>Every shuffle of two cards fits in one table.</p>
-          <PermutationTable size={2} />
-        </>
+        <div class="talk-permutations">
+          <div>
+            <p>Every shuffle of two cards fits in one table.</p>
+            <PermutationTable size={2} />
+          </div>
+          <PermutationCards size={2} />
+        </div>
       ),
     },
     {
+      id: 'three-cards',
       title: exampleTitle(3),
       body: () => (
-        <>
-          <p>
-            The first pick splits {factorial(3).toString()} orderings into 3
-            blocks of {factorial(2).toString()}. Index 4 ÷ 2 = 2, so card 2
-            leads. Watch:
-          </p>
-          <UnrankExample {...THREE_CARD_EXAMPLE} />
-        </>
+        <div class="talk-permutations">
+          <div>
+            <p>
+              Three choices for the first card, two for the next: all six
+              orderings.
+            </p>
+            <PermutationTable size={3} />
+          </div>
+          <PermutationCards size={3} />
+        </div>
       ),
     },
+    ...debuggerSlides,
     {
-      title: exampleTitle(4),
-      body: () => (
-        <>
-          <p>Twenty-four orderings, still one screen. Select an index.</p>
-          <FourCardWalkthrough model={fourCards} />
-        </>
-      ),
-    },
-    {
-      title: exampleTitle(5),
-      body: () => (
-        <>
-          <p>
-            120 rows is where printing the table stops being useful. Index 73:
-            73 ÷ 24 = 3 remainder 1, and the recipe keeps going.
-          </p>
-          <UnrankExample {...FIVE_CARD_EXAMPLE} />
-        </>
-      ),
-    },
-    {
+      id: 'fifty-two-cards',
       title: 'Then 52 cards',
       body: () => (
         <p>

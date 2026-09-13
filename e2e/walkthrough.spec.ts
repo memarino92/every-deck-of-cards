@@ -29,7 +29,7 @@ test('four-card input, keyboard selection, and replay share one state', async ({
   ).toContainText('3 × 24 = 72')
 })
 
-test('Talk retains embedded controls and selection across slide navigation', async ({
+test('Talk opens with history, two and three-card tables, then the full demo', async ({
   page,
 }) => {
   await page.goto('/talk')
@@ -38,28 +38,25 @@ test('Talk retains embedded controls and selection across slide navigation', asy
     exact: true,
   })
   await expect(surface).toBeFocused()
+  await expect(page.locator('h1')).toHaveText('Charles-Ange Laisant')
   await page.keyboard.press('ArrowRight')
+  await expect(page.locator('h1')).toHaveText('Derrick H. Lehmer')
+  await page.keyboard.press('ArrowRight')
+  await expect(page.locator('h1')).toHaveText('2 cards, 2 orderings')
+  await expect(page.locator('.permutation-table tbody tr')).toHaveCount(2)
   await page.keyboard.press('ArrowRight')
   await expect(page.locator('h1')).toHaveText('3 cards, 6 orderings')
-  await page.getByRole('spinbutton').focus()
+  await expect(page.locator('.permutation-table tbody tr')).toHaveCount(6)
+  await expect(
+    page.locator('.permutation-table tbody td:nth-child(2)'),
+  ).toHaveText(['0 1 2', '0 2 1', '1 0 2', '1 2 0', '2 0 1', '2 1 0'])
+  await expect(page.locator('.stepper')).toHaveCount(0)
   await page.keyboard.press('ArrowRight')
-  await expect(page.locator('h1')).toHaveText('3 cards, 6 orderings')
-  await page
-    .locator('.stepper')
-    .getByRole('button', { name: 'Next', exact: true })
-    .focus()
-  await page.keyboard.press('Space')
-  await expect(page.locator('.stepper-progress')).toHaveText('step 2 of 3')
-  await surface.focus()
-  await page.keyboard.press('ArrowRight')
-  await page.getByRole('spinbutton').fill('17')
-  await page
-    .locator('.talk-controls')
-    .getByRole('button', { name: 'Next' })
-    .click()
-  await page
-    .locator('.talk-controls')
-    .getByRole('button', { name: 'Prev' })
-    .click()
-  await expect(page.getByRole('spinbutton')).toHaveValue('17')
+  await expect(page.locator('h1')).toHaveText('Deal index 0')
+  await expect(page.locator('.algorithm-walk')).toHaveAttribute(
+    'data-frame',
+    'start',
+  )
+  await page.keyboard.press('ArrowLeft')
+  await expect(page.locator('.permutation-table tbody tr')).toHaveCount(6)
 })
