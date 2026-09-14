@@ -3,8 +3,9 @@ import { CANONICAL_DECK } from '../domain/cards.ts'
 import { factorial } from '../domain/factorial.ts'
 import { traceUnrank } from '../domain/trace.ts'
 import { PlayingCard } from '../PlayingCard.tsx'
+import './permutation-cards.css'
 
-export function PermutationCards(props: { readonly size: 2 | 3 }) {
+export function PermutationCards(props: { readonly size: 1 | 2 | 3 }) {
   const rows = createMemo(() => {
     const cards = CANONICAL_DECK.slice(0, props.size)
     const result = []
@@ -16,7 +17,13 @@ export function PermutationCards(props: { readonly size: 2 | 3 }) {
 
   return (
     <ol
-      class={['talk-permutation-cards', { 'is-two-cards': props.size === 2 }]}
+      class={[
+        'talk-permutation-cards',
+        {
+          'is-one-card': props.size === 1,
+          'is-two-cards': props.size === 2,
+        },
+      ]}
       aria-label="Card arrangements in index order"
     >
       <For each={rows()}>

@@ -1,0 +1,30 @@
+.talk-permutation-cards {
+  --card-width: clamp(2.5rem, 6.5vh, 4rem);
+
+  display: grid;
+  justify-content: center;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.talk-permutation-cards.is-one-card,
+.talk-permutation-cards.is-two-cards {
+  --card-width: clamp(4rem, 13vh, 8rem);
+
+  gap: 1.5rem;
+}
+
+.talk-permutation-cards li {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.talk-arrangement-index {
+  width: 2ch;
+  margin-right: 0.5rem;
+  color: var(--muted);
+  font: 0.9rem var(--font-mono);
+}

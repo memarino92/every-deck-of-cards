@@ -113,6 +113,7 @@ function CardTrays(props: {
 export function AlgorithmWalkthrough(props: {
   readonly walk: DebugWalk
   readonly frame: DebugFrame
+  readonly announce?: boolean
 }) {
   return (
     <div class="algorithm-walk" data-frame={props.frame.id}>
@@ -173,7 +174,10 @@ export function AlgorithmWalkthrough(props: {
           <p class="debug-equation">{props.frame.equation}</p>
         </div>
       </div>
-      <output class="debug-narration" aria-live="polite">
+      <output
+        class="debug-narration"
+        aria-live={props.announce === false ? 'off' : 'polite'}
+      >
         {props.frame.narration}
       </output>
     </div>

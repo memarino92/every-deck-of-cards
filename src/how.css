@@ -1,0 +1,68 @@
+.how-permutations {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(12rem, auto);
+  align-items: center;
+  gap: clamp(1.5rem, 5vw, 3rem);
+}
+
+.how-permutations .permutation-table {
+  margin-block: 1rem 0;
+}
+
+.how-permutations .talk-permutation-cards {
+  --card-width: clamp(2.25rem, 5vw, 3.25rem);
+
+  justify-content: start;
+  margin-top: 1rem;
+  padding-inline: 0.75rem;
+}
+
+.how-permutations .talk-permutation-cards.is-one-card,
+.how-permutations .talk-permutation-cards.is-two-cards {
+  --card-width: clamp(3.5rem, 8vw, 5rem);
+}
+
+.how-page .autoplay-walkthrough {
+  width: min(72rem, calc(100dvw - 2rem));
+  margin: 1.5rem 0 0 50%;
+  padding: clamp(0.75rem, 2vw, 1.5rem);
+  transform: translateX(-50%);
+  border: 1px solid rgb(196 143 53 / 30%);
+  border-radius: 0.75rem;
+  background: rgb(0 0 0 / 10%);
+  overflow: hidden;
+}
+
+.autoplay-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  color: var(--muted);
+  font: 0.75rem var(--font-mono);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.autoplay-status .action-button {
+  --action-padding: 0.35rem 0.75rem;
+  --action-radius: 0.3rem;
+
+  font-size: 0.7rem;
+}
+
+@media (max-width: 800px) {
+  .how-permutations {
+    grid-template-columns: 1fr;
+  }
+
+  .how-page .autoplay-walkthrough {
+    width: min(100%, calc(100dvw - 2rem));
+    padding: 0.75rem;
+  }
+
+  .autoplay-status {
+    align-items: flex-start;
+  }
+}
