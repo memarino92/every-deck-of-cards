@@ -1,23 +1,23 @@
 import { DECK_COUNT } from './domain/deck-number.ts'
-import { factorial } from './domain/factorial.ts'
 import { compareDeckCountToAtomsOnEarth } from './domain/magnitude.ts'
 import { PermutationTable } from './examples/PermutationTable.tsx'
-import { FourCardWalkthrough, UnrankExample } from './examples/CardExamples.tsx'
+import { PermutationCards } from './presentation/PermutationCards.tsx'
+import { AutoplayAlgorithmWalkthrough } from './presentation/debugger/AutoplayAlgorithmWalkthrough.tsx'
 import {
-  createWalkthrough,
-  exampleTitle,
-  THREE_CARD_EXAMPLE,
-  FIVE_CARD_EXAMPLE,
-} from './examples/walkthrough.ts'
+  FOUR_CARDS,
+  rankWalk,
+  unrankWalk,
+} from './presentation/debugger/frames.ts'
+import './how.css'
 
 const atomsComparison = compareDeckCountToAtomsOnEarth()
 const deckCountText = DECK_COUNT.toLocaleString('en-US')
+const indexFourteenWalk = unrankWalk(14n)
+const reverseWalk = rankWalk(FOUR_CARDS.toReversed())
 
 export function HowPage() {
-  const fourCards = createWalkthrough({ size: 4, initialIndex: 0n })
-
   return (
-    <article class="article-layout" aria-labelledby="how-title">
+    <article class="article-layout how-page" aria-labelledby="how-title">
       <p class="eyebrow">How it works</p>
       <h1 id="how-title" class="article-title">
         Every number, one exact shuffle
@@ -31,52 +31,70 @@ export function HowPage() {
           reversible recipe. The recipe is the{' '}
           <strong>factorial number system</strong>: an index tells you which
           card to pick next from a shrinking pool, one digit at a time. Let's
-          build it up with decks small enough to see whole.
+          build it up with decks small enough to see whole. The examples use
+          zero-based indices, so the first ordering is index 0.
         </p>
+      </section>
+
+      <section aria-labelledby="how-one">
+        <h2 id="how-one">1 card, 1 ordering</h2>
+        <p>
+          With one card, there is nothing to choose. There is one possible
+          ordering, so index 0 can only mean the card already in our pool.
+        </p>
+        <div class="how-permutations">
+          <PermutationTable size={1} />
+          <PermutationCards size={1} />
+        </div>
       </section>
 
       <section aria-labelledby="how-two">
-        <h2 id="how-two">{exampleTitle(2)}</h2>
+        <h2 id="how-two">2 cards, 2 orderings</h2>
         <p>
-          With two cards there are only two orders. Index 0 is the deck as
-          dealt; index 1 swaps them. Every possible shuffle of this tiny deck
-          fits in one table — and every larger deck is just this idea with more
-          picks.
+          Add a second card and there are two choices for the first position.
+          Index 0 takes the first card from the pool; index 1 takes the second.
+          The unchosen card is the only one left to follow it.
         </p>
-        <PermutationTable size={2} />
+        <div class="how-permutations">
+          <PermutationTable size={2} />
+          <PermutationCards size={2} />
+        </div>
       </section>
 
       <section aria-labelledby="how-three">
-        <h2 id="how-three">{exampleTitle(3)}</h2>
+        <h2 id="how-three">3 cards, 6 orderings</h2>
         <p>
-          Now the interesting part. The first pick splits the{' '}
-          {factorial(3).toString()} orderings into 3 blocks of{' '}
-          {factorial(2).toString()} — one block for each possible first card.
-          Index 4 lands in the third block (4 ÷ 2 = 2), so the first card is the
-          one at pool position 2: card 2. Two steps later the deck is 2 0 1.
-          Watch it happen:
+          Three choices for the first card and two for the next make six
+          orderings. They fall into three blocks of two: indices 0–1 start with
+          card 0, 2–3 with card 1, and 4–5 with card 2. That block structure is
+          what lets division find any ordering directly.
         </p>
-        <UnrankExample {...THREE_CARD_EXAMPLE} />
+        <div class="how-permutations">
+          <PermutationTable size={3} />
+          <PermutationCards size={3} />
+        </div>
       </section>
 
-      <section aria-labelledby="how-four">
-        <h2 id="how-four">{exampleTitle(4)}</h2>
+      <section class="how-algorithm" aria-labelledby="how-index-fourteen">
+        <h2 id="how-index-fourteen">Deal index 14</h2>
         <p>
-          Twenty-four orderings still fit on one screen. Select any index to
-          replay exactly how its index dealt the cards.
+          Four cards make 24 orderings. To deal index 14, divide by the next
+          factorial place value, use the quotient to pick from the remaining
+          pool, and carry the remainder forward. The same operation repeats
+          until every card has moved into the result.
         </p>
-        <FourCardWalkthrough model={fourCards} />
+        <AutoplayAlgorithmWalkthrough walk={indexFourteenWalk} />
       </section>
 
-      <section aria-labelledby="how-five">
-        <h2 id="how-five">{exampleTitle(5)}</h2>
+      <section class="how-algorithm" aria-labelledby="how-reverse">
+        <h2 id="how-reverse">Reverse the recipe</h2>
         <p>
-          A hundred and twenty rows is where printing the table stops being
-          useful — and that's the point. You never need the table. Try index 73:
-          the first digit is 73 ÷ 24 = 3 with remainder 1, and the recipe keeps
-          going from there.
+          Start with the four cards reversed — 4, 3, 2, A — and the calculation
+          runs the other way. Each card's position in the remaining canonical
+          pool tells us how many blocks came before it. Add those blocks and we
+          recover index 23, the final four-card ordering.
         </p>
-        <UnrankExample {...FIVE_CARD_EXAMPLE} />
+        <AutoplayAlgorithmWalkthrough walk={reverseWalk} />
       </section>
 
       <section aria-labelledby="how-fiftytwo">

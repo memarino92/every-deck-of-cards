@@ -93,30 +93,6 @@
   align-items: center;
   gap: clamp(1.5rem, 4vw, 4rem);
 }
-.talk-permutation-cards {
-  --card-width: clamp(2.5rem, 6.5vh, 4rem);
-  display: grid;
-  justify-content: center;
-  gap: 0.5rem;
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-.talk-permutation-cards.is-two-cards {
-  --card-width: clamp(4rem, 13vh, 8rem);
-  gap: 1.5rem;
-}
-.talk-permutation-cards li {
-  display: flex;
-  align-items: center;
-  gap: 0.65rem;
-}
-.talk-arrangement-index {
-  width: 2ch;
-  margin-right: 0.5rem;
-  color: var(--muted);
-  font: 0.9rem var(--font-mono);
-}
 @media (max-width: 650px) {
   .talk-permutations {
     grid-template-columns: 1fr;

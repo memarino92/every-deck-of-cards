@@ -1,14 +1,14 @@
 import { expect, test } from '@playwright/test'
 import { positionFromPointer } from '../src/cards/spread.ts'
 
-test('walkthrough typography belongs to the article example', async ({
+test('debugger typography remains independent of article prose', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1280, height: 900 })
   await page.goto('/how')
-  const math = page.locator('.stepper-math').first()
-  await expect(math).toHaveCSS('font-size', '14.4px')
-  await expect(math).toHaveCSS('margin-bottom', '8px')
+  const narration = page.locator('.debug-narration').first()
+  await expect(narration).toHaveCSS('font-size', '17.6px')
+  await expect(narration).toHaveCSS('margin-top', '20px')
   await expect(page.locator('#how-three + p')).toHaveCSS('font-size', '17.92px')
 })
 

@@ -5,15 +5,15 @@ import { traceUnrank } from '../domain/trace.ts'
 
 export function PermutationTable(props: {
   /** Tables are deliberately limited to at most 24 rows. */
-  readonly size: 2 | 3 | 4
+  readonly size: 1 | 2 | 3 | 4
   readonly onSelect?: (index: bigint) => void
 }) {
   const canonical = createMemo(() =>
     Array.from({ length: props.size }, (_, value) => value),
   )
   const rows = createMemo(() => {
-    if (!Number.isInteger(props.size) || props.size < 2 || props.size > 4) {
-      throw new RangeError('Example tables support two through four cards')
+    if (!Number.isInteger(props.size) || props.size < 1 || props.size > 4) {
+      throw new RangeError('Example tables support one through four cards')
     }
     const count = factorial(props.size)
     const result: { index: bigint; permutation: readonly number[] }[] = []
