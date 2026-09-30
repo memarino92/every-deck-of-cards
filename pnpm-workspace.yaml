@@ -12,10 +12,10 @@ peerDependencyRules:
 saveExact: true
 strictPeerDependencies: true
 catalog:
-  vite: npm:@voidzero-dev/vite-plus-core@0.3.1
-  vite-plus: 0.3.1
+  vite: npm:@voidzero-dev/vite-plus-core@1.0.0
+  vite-plus: 1.0.0
 overrides:
   vite@*: 'catalog:'
-  # Solid RC.7 declares this as a caret prerelease range, which now resolves to
-  # RC.8 and breaks the RC.7 runtime's diagnostics interface.
-  '@solidjs/signals': 2.0.0-rc.7
+  # Keep the prerelease signal runtime aligned with Solid RC.11; the caret range
+  # otherwise advances independently and can break the runtime/compiler pair.
+  '@solidjs/signals': 2.0.0-rc.11

@@ -17,6 +17,16 @@ export default defineConfig({
     },
   },
   test: {
+    // Vitest v4 compatibility: preserve mock call history.
+    // Remove after tests no longer rely on calls from setup or earlier tests.
+    // https://viteplus.dev/guide/vitest-v5#remove-unneeded-compatibility-settings
+    // https://vitest.dev/guide/migration/#clearmocks-is-enabled-by-default
+    clearMocks: false,
+    // Vitest v4 compatibility: keep separate Vite servers for inline projects.
+    // Remove when plugins and config hooks can run once for shared projects.
+    // https://viteplus.dev/guide/vitest-v5#remove-unneeded-compatibility-settings
+    // https://vitest.dev/guide/migration/#inline-projects-share-the-vite-server-by-default
+    sharedViteServer: false,
     // The plugin sets the framework's export conditions from each project's
     // environment: jsdom (the default test posture) resolves the client build
     // of @solidjs/web, node resolves the server build. Component tests and

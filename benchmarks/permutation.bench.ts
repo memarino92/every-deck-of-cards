@@ -1,4 +1,4 @@
-import { bench, describe } from 'vite-plus/test'
+import { expect, test } from 'vite-plus/test'
 
 import { CANONICAL_DECK } from '../src/domain/cards.ts'
 import { DECK_COUNT } from '../src/domain/deck-number.ts'
@@ -39,64 +39,53 @@ function consumeResult(deck: readonly number[]): void {
 }
 
 for (const [name, index] of CASES) {
-  describe(`unrank 52-card ${name} index`, () => {
-    bench(
-      'shrinking array',
-      () => {
-        consumeResult(unrankPermutation(CANONICAL_DECK, index))
-      },
-      BENCHMARK_OPTIONS,
-    )
-    bench(
-      'Fenwick tree',
-      () => {
-        consumeResult(unrankPermutationWithFenwick(CANONICAL_DECK, index))
-      },
-      BENCHMARK_OPTIONS,
-    )
+  test(`unrank 52-card ${name} index`, async ({ bench }) => {
+    const arrayResult = await bench('shrinking array', () => {
+      consumeResult(unrankPermutation(CANONICAL_DECK, index))
+    }).run(BENCHMARK_OPTIONS)
+    const fenwickResult = await bench('Fenwick tree', () => {
+      consumeResult(unrankPermutationWithFenwick(CANONICAL_DECK, index))
+    }).run(BENCHMARK_OPTIONS)
+
+    expect(arrayResult.throughput.mean).toBeGreaterThan(0)
+    expect(fenwickResult.throughput.mean).toBeGreaterThan(0)
   })
 }
 
-describe(`unrank mixed ${MIXED_CORPUS.length}-index corpus, array first`, () => {
-  bench(
-    'shrinking array',
-    () => {
-      for (const index of MIXED_CORPUS) {
-        consumeResult(unrankPermutation(CANONICAL_DECK, index))
-      }
-    },
-    BENCHMARK_OPTIONS,
-  )
+test(`unrank mixed ${MIXED_CORPUS.length}-index corpus, array first`, async ({
+  bench,
+}) => {
+  const arrayResult = await bench('shrinking array', () => {
+    for (const index of MIXED_CORPUS) {
+      consumeResult(unrankPermutation(CANONICAL_DECK, index))
+    }
+  }).run(BENCHMARK_OPTIONS)
 
-  bench(
-    'Fenwick tree',
-    () => {
-      for (const index of MIXED_CORPUS) {
-        consumeResult(unrankPermutationWithFenwick(CANONICAL_DECK, index))
-      }
-    },
-    BENCHMARK_OPTIONS,
-  )
+  const fenwickResult = await bench('Fenwick tree', () => {
+    for (const index of MIXED_CORPUS) {
+      consumeResult(unrankPermutationWithFenwick(CANONICAL_DECK, index))
+    }
+  }).run(BENCHMARK_OPTIONS)
+
+  expect(arrayResult.throughput.mean).toBeGreaterThan(0)
+  expect(fenwickResult.throughput.mean).toBeGreaterThan(0)
 })
 
-describe(`unrank mixed ${MIXED_CORPUS.length}-index corpus, Fenwick first`, () => {
-  bench(
-    'Fenwick tree',
-    () => {
-      for (const index of MIXED_CORPUS) {
-        consumeResult(unrankPermutationWithFenwick(CANONICAL_DECK, index))
-      }
-    },
-    BENCHMARK_OPTIONS,
-  )
+test(`unrank mixed ${MIXED_CORPUS.length}-index corpus, Fenwick first`, async ({
+  bench,
+}) => {
+  const fenwickResult = await bench('Fenwick tree', () => {
+    for (const index of MIXED_CORPUS) {
+      consumeResult(unrankPermutationWithFenwick(CANONICAL_DECK, index))
+    }
+  }).run(BENCHMARK_OPTIONS)
 
-  bench(
-    'shrinking array',
-    () => {
-      for (const index of MIXED_CORPUS) {
-        consumeResult(unrankPermutation(CANONICAL_DECK, index))
-      }
-    },
-    BENCHMARK_OPTIONS,
-  )
+  const arrayResult = await bench('shrinking array', () => {
+    for (const index of MIXED_CORPUS) {
+      consumeResult(unrankPermutation(CANONICAL_DECK, index))
+    }
+  }).run(BENCHMARK_OPTIONS)
+
+  expect(arrayResult.throughput.mean).toBeGreaterThan(0)
+  expect(fenwickResult.throughput.mean).toBeGreaterThan(0)
 })
