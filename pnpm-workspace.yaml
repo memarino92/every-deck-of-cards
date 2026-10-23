@@ -13,7 +13,7 @@ saveExact: true
 strictPeerDependencies: true
 catalog:
   vite: npm:@voidzero-dev/vite-plus-core@1.0.0
-  vite-plus: 1.0.0
+  vite-plus: 1.3.0
 overrides:
   vite@*: 'catalog:'
   # Keep the prerelease signal runtime aligned with Solid RC.11; the caret range
