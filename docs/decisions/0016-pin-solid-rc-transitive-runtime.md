@@ -1,6 +1,6 @@
 # 0016: Pin the Solid RC.7 transitive runtime
 
-- Status: accepted
+- Status: superseded by [stable Solid 2](0017-use-stable-solid-2.md)
 - Date: 2026-09-11
 
 ## Context

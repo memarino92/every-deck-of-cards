@@ -16,6 +16,3 @@ catalog:
   vite-plus: 1.0.0
 overrides:
   vite@*: 'catalog:'
-  # Keep the prerelease signal runtime aligned with Solid RC.11; the caret range
-  # otherwise advances independently and can break the runtime/compiler pair.
-  '@solidjs/signals': 2.0.0-rc.11

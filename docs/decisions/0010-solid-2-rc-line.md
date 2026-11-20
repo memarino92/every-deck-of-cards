@@ -1,6 +1,6 @@
 # 0010: Track the Solid 2.0 release-candidate line
 
-- Status: accepted
+- Status: superseded by [stable Solid 2](0017-use-stable-solid-2.md)
 - Date: 2026-08-30
 
 ## Context
