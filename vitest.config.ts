@@ -4,9 +4,8 @@ import solid from '@solidjs/vite-plugin'
 import { defineConfig } from 'vite-plus'
 
 export default defineConfig({
-  // solid:false disables HMR/solid-refresh, which breaks under vitest's SSR
-  // runner; the JSX transform still applies.
-  plugins: [solid({ hot: false })],
+  // Keep Solid Refresh out of the Vitest module runner.
+  plugins: [solid({ refresh: false })],
   resolve: {
     // The project imports TypeScript sources with explicit .ts extensions
     // (allowImportingTsExtensions). The Solid JSX transform on .tsx test files
