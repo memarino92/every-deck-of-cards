@@ -56,6 +56,13 @@ Also adopt start mode in client posture (no `ssr`): delete `index.html`, port it
     probe (no `Accept` header) 404s and times out. The probe now targets a
     plain-200 health endpoint instead.
 
+## Dependency updates
+
+When upgrading Vite+, update both pnpm catalog entries together. Use the
+`vite` alias declared in the new `vite-plus` package manifest for the core pin.
+The two packages can use different version numbers. Regenerate the lockfile
+and run typecheck to catch mismatched Vite plugin types.
+
 ## Related Material
 
 - Plan: `docs/plans/completed/2026-08-30-vite-plus-migration.md`.
